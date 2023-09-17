@@ -1,0 +1,17 @@
+[package]
+name = "skimmer"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.75"
+chromiumoxide = "0.5.4"
+chrono = "0.4.31"
+diesel = { version = "2.1.1", features = ["postgres", "chrono"] }
+futures = "0.3.28"
+html2text = "0.6.0"
+reqwest = { version = "0.11.20", features = ["json"] }
+serde = { version = "1.0.188", features = ["derive"] }
+tokio = { version = "1.32.0", features = ["macros", "rt-multi-thread"] }
