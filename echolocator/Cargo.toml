@@ -10,4 +10,5 @@ anyhow = "1.0.75"
 axum = "0.6.20"
 futures-util = "0.3.28"
 reqwest = { version = "0.11.22", features = ["stream"] }
+serde = { version = "1.0.189", features = ["derive"] }
 tokio = { version = "1.33.0", features = ["macros", "rt-multi-thread"] }

@@ -23,10 +23,11 @@ pub(crate) struct ItemRepository {
 impl ItemRepository {
     pub(crate) fn new() -> Result<Self> {
         let database_url = format!(
-            "postgres://{}:{}@{}/{}",
+            "postgres://{}:{}@{}:{}/{}",
             env::var("DATABASE_USER")?,
             env::var("DATABASE_PASSWORD")?,
             env::var("DATABASE_HOST")?,
+            env::var("DATABASE_PORT").unwrap_or("5432".to_string()),
             env::var("DATABASE_DB")?,
         );
         return Ok(Self {
@@ -35,14 +36,14 @@ impl ItemRepository {
     }
 
     pub(crate) fn find_min_item_id(&mut self) -> Result<i32> {
-        let min_item_id = diesel::sql_query("SELECT id FROM items ORDER BY id ASC LIMIT 1")
+        let min_item_id = diesel::sql_query("SELECT min(id) AS id FROM items")
             .get_result::<ItemIdRecord>(&mut self.connection)?
             .id;
         return Ok(min_item_id);
     }
 
     pub(crate) fn find_max_item_id(&mut self) -> Result<i32> {
-        let max_item_id = diesel::sql_query("SELECT id FROM items ORDER BY id DESC LIMIT 1")
+        let max_item_id = diesel::sql_query("SELECT max(id) AS id FROM items")
             .get_result::<ItemIdRecord>(&mut self.connection)?
             .id;
         return Ok(max_item_id);
@@ -81,7 +82,23 @@ impl ItemRepository {
         return Ok(missing_item_urls);
     }
 
-    pub(crate) fn save_item(&mut self, item: Item) -> Result<()> {
+    pub(crate) fn find_summary_missing_item_urls(&mut self, ids: &[i32]) -> Result<Vec<(i32, String, String)>> {
+        let summary_missing_item_urls = diesel::sql_query(format!(
+            "SELECT item_id AS id, title, item_urls.text \
+            FROM unnest(ARRAY[{}]) AS s(i) \
+            JOIN items ON s.i = items.id \
+            JOIN item_urls ON s.i = item_urls.item_id \
+            WHERE item_urls.text IS NOT NULL AND summary IS NULL",
+            ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", ")
+        ))
+        .get_results::<SummaryMissingItemUrlRecord>(&mut self.connection)?
+        .into_iter()
+        .map(|r| (r.id, r.title, r.text))
+        .collect();
+        return Ok(summary_missing_item_urls);
+    }
+
+    pub(crate) fn insert_item(&mut self, item: Item) -> Result<()> {
         let item_record = ItemRecord {
             id: item.id,
             deleted: item.deleted,
@@ -106,7 +123,7 @@ impl ItemRepository {
         Ok(())
     }
 
-    pub(crate) fn save_item_url(&mut self, item_id: i32, item_url: ItemUrl) -> Result<()> {
+    pub(crate) fn insert_item_url(&mut self, item_id: i32, item_url: ItemUrl) -> Result<()> {
         let mut item_url_record = ItemUrlRecord {
             item_id,
             html: None,
@@ -137,6 +154,18 @@ impl ItemRepository {
             .values(&item_url_record)
             .returning(ItemUrlRecord::as_returning())
             .get_result(&mut self.connection)?;
+        Ok(())
+    }
+
+    pub(crate) fn update_item_url(&mut self, item_id: i32, summary: String) -> Result<()> {
+        let update_item_url_record = UpdateItemUrlRecord {
+            summary: Some(summary),
+            updated_at: Local::now(),
+        };
+        diesel::update(item_urls::table)
+            .filter(item_urls::item_id.eq(item_id))
+            .set(update_item_url_record)
+            .execute(&mut self.connection)?;
         Ok(())
     }
 }
@@ -239,4 +268,22 @@ struct MissingItemUrlRecord {
     id: i32,
     #[diesel(sql_type = Text)]
     url: String,
+}
+
+#[derive(QueryableByName)]
+struct SummaryMissingItemUrlRecord {
+    #[diesel(sql_type = Integer)]
+    id: i32,
+    #[diesel(sql_type = Text)]
+    title: String,
+    #[diesel(sql_type = Text)]
+    text: String,
+}
+
+#[derive(AsChangeset)]
+#[diesel(table_name = item_urls)]
+#[diesel(check_for_backend(Pg))]
+struct UpdateItemUrlRecord {
+    summary: Option<String>,
+    updated_at: DateTime<Local>,
 }

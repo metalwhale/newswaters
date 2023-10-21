@@ -173,6 +173,7 @@ dependencies = [
  "axum",
  "futures-util",
  "reqwest",
+ "serde",
  "tokio",
 ]
 

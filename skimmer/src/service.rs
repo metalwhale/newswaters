@@ -1,9 +1,17 @@
+use std::{collections::HashMap, env};
+
 use anyhow::{bail, Result};
 use chromiumoxide::browser::{Browser, BrowserConfig};
 use futures::StreamExt;
 use html2text::{self, render::text_renderer::TrivialDecorator};
 use reqwest::header::CONTENT_TYPE;
 use serde::Deserialize;
+
+// See: https://github.com/HackerNews/API/tree/38154ba#max-item-id
+pub(crate) async fn get_max_item_id() -> Result<i32> {
+    let response = reqwest::get("https://hacker-news.firebaseio.com/v0/maxitem.json?print=pretty").await?;
+    Ok(response.text().await?.trim().parse()?)
+}
 
 #[derive(Deserialize)]
 pub(crate) struct Item {
@@ -25,12 +33,6 @@ pub(crate) struct Item {
     #[allow(dead_code)]
     pub parts: Option<Vec<i32>>,
     pub descendants: Option<i32>,
-}
-
-// See: https://github.com/HackerNews/API/tree/38154ba#max-item-id
-pub(crate) async fn get_max_item() -> Result<i32> {
-    let response = reqwest::get("https://hacker-news.firebaseio.com/v0/maxitem.json?print=pretty").await?;
-    Ok(response.text().await?.trim().parse()?)
 }
 
 // See: https://github.com/HackerNews/API/tree/38154ba#items
@@ -100,4 +102,49 @@ pub(crate) async fn get_item_url(url: &str) -> Result<ItemUrl> {
         };
         return Ok(ItemUrl::Finished { html, text });
     }
+}
+
+pub(crate) async fn get_top_story_ids() -> Result<Vec<i32>> {
+    let response = reqwest::get("https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty").await?;
+    Ok(response.json().await?)
+}
+
+#[derive(Deserialize)]
+struct InferenceResponse {
+    completion: String,
+}
+
+pub(crate) async fn post_instruct_summary(title: &str, text: &str) -> Result<String> {
+    let prompt = format!(
+        "[INST] \
+        Please generate related topics and provide a detailed summary that aligns with the title and omits any irrelevant text. \
+        Summarize only the title if the content is not related to it. \
+        Output ONLY the summary without any additional explanation.\n\n\
+        Title:\n\
+        {}\n\n\
+        Content:\n\
+        {}\n\n\
+        Output format:\n\
+        - Topics:\n\
+        - Summary:\n\
+        [/INST]",
+        title, text
+    );
+    let mut payload = HashMap::new();
+    payload.insert("prompt", format!("<s>{}", &prompt));
+    let client = reqwest::Client::new();
+    let inference_endpoint = format!(
+        "http://{}:{}/inference",
+        env::var("ECHOLOCATOR_HOST")?,
+        env::var("ECHOLOCATOR_PORT")?
+    );
+    let response = client
+        .post(inference_endpoint)
+        .json(&payload)
+        .send()
+        .await?
+        .json::<InferenceResponse>()
+        .await?;
+    let summary = response.completion.replace(&prompt, "").trim().to_string();
+    Ok(summary)
 }
