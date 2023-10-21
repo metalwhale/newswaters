@@ -1,5 +1,14 @@
 version: "3"
 services:
+  echolocator:
+    build:
+      context: ./echolocator
+      dockerfile: Dockerfile.local
+    volumes:
+      - ./:/usr/src/newswaters/
+      - ../models/:/usr/src/models/
+    tty: true
+    working_dir: /usr/src/newswaters/echolocator/
   skimmer:
     build:
       context: ./skimmer
@@ -16,6 +25,22 @@ services:
       - ./:/usr/src/newswaters/
     tty: true
     working_dir: /usr/src/newswaters/skimmer/
+  whistler:
+    build:
+      context: ./whistler
+      dockerfile: Dockerfile.local
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      - DATABASE_HOST=database
+      - DATABASE_DB=hacker_news
+      - DATABASE_USER=whale
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+    volumes:
+      - ./:/usr/src/newswaters/
+    tty: true
+    working_dir: /usr/src/newswaters/whistler/
   # See: https://hub.docker.com/_/postgres
   database:
     image: postgres:16.0

@@ -32,6 +32,24 @@ Whales feed by skimming.
     cargo run -- item_urls
     ```
 
+### Run the echolocator
+Whales learn about their surrounding environment by echolocating.
+1. Get inside the container:
+    ```bash
+    docker-compose exec echolocator bash
+    ```
+2. Run the server:
+    ```bash
+    cargo run
+    ```
+
+### Run the whistler
+Whales communicate through whistling.
+1. Get inside the container:
+    ```bash
+    docker-compose exec whistler bash
+    ```
+
 ## References
 - [Building LLM applications for production](https://huyenchip.com/2023/04/11/llm-engineering.html)
 - [Patterns for Building LLM-based Systems & Products](https://eugeneyan.com/writing/llm-patterns/)

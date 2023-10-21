@@ -1,0 +1,12 @@
+FROM rust:1.72.0
+
+RUN cd /usr/src/ && \
+    git clone https://github.com/ggerganov/llama.cpp && \
+    cd llama.cpp/ && \
+    # TODO: Change to `make -j` if the issue is fixed
+    # See https://github.com/ggerganov/llama.cpp/issues/1655
+    git checkout b1407 && \
+    UNAME_M=arm64 UNAME_p=arm LLAMA_NO_METAL=1 make -j && \
+    mv ./main /bin/llama
+
+RUN rustup component add rustfmt
