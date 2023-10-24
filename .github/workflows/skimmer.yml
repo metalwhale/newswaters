@@ -20,4 +20,4 @@ jobs:
           context: "{{defaultContext}}:skimmer"
           file: Dockerfile.deployment
           push: true
-          tags: metalwhaledev/newswaters-skimmer:0.1.1
+          tags: metalwhaledev/newswaters-skimmer:0.1.2
