@@ -2,6 +2,7 @@ use anyhow::{bail, Result};
 use chromiumoxide::browser::{Browser, BrowserConfig};
 use futures::StreamExt;
 use html2text::{self, render::text_renderer::TrivialDecorator};
+use reqwest::header::CONTENT_TYPE;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -50,10 +51,22 @@ pub(crate) enum ItemUrl {
 }
 
 pub(crate) async fn get_item_url(url: &str) -> Result<ItemUrl> {
-    if url.ends_with(".pdf") {
-        return Ok(ItemUrl::Skipped {
-            note: "Skipping pdf files".to_string(),
-        });
+    let response = reqwest::get(url).await?;
+    let skipping_note = match response.headers().get(CONTENT_TYPE) {
+        Some(value) => match value.to_str() {
+            Ok(t) => {
+                if t.to_lowercase().contains("pdf") {
+                    Some(format!("Skipped: {}", t))
+                } else {
+                    None
+                }
+            }
+            Err(_) => None,
+        },
+        None => None,
+    };
+    if let Some(note) = skipping_note {
+        return Ok(ItemUrl::Skipped { note });
     } else {
         let config = match BrowserConfig::builder()
             .incognito()
