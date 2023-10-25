@@ -2,7 +2,7 @@ mod repository;
 mod schema;
 mod service;
 
-use std::{collections::HashMap, env, ops::DerefMut, sync::Arc, thread, time::Duration};
+use std::{collections::HashMap, env, ops::DerefMut, sync::Arc, time::Duration};
 
 use anyhow::{bail, Result};
 use tokio::{
@@ -48,7 +48,7 @@ async fn save_items(repo: Arc<Mutex<ItemRepository>>, is_job: bool) -> Result<()
         if is_job {
             break Ok(());
         } else {
-            thread::sleep(Duration::from_secs(60));
+            tokio::time::sleep(Duration::from_secs(60)).await;
         }
     }
 }
@@ -84,7 +84,7 @@ async fn save_item_urls(repo: Arc<Mutex<ItemRepository>>, is_job: bool) -> Resul
         if is_job {
             break Ok(());
         } else {
-            thread::sleep(Duration::from_secs(60));
+            tokio::time::sleep(Duration::from_secs(60)).await;
         }
     }
 }
@@ -107,13 +107,13 @@ async fn save_batch_items(
         let permit = semaphore.clone().acquire_owned().await?;
         let repo_inst = Arc::clone(&repo);
         let handle = tokio::spawn(async move {
-            let max_retry_count = 1000;
+            let max_retry_count = 100;
             let mut retry_count = 0;
             let item = loop {
                 match service::get_item(id).await {
                     Ok(item) => break item,
                     Err(e) => {
-                        thread::sleep(Duration::from_millis(500));
+                        tokio::time::sleep(Duration::from_secs(1)).await;
                         retry_count += 1;
                         if retry_count >= max_retry_count {
                             bail!(e)
