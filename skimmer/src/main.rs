@@ -4,7 +4,7 @@ mod service;
 
 use std::{collections::HashMap, env, ops::DerefMut, sync::Arc, thread, time::Duration};
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use tokio::{
     self,
     sync::{Mutex, Semaphore},
@@ -96,7 +96,7 @@ async fn save_batch_items(
     batch_max_id: i32,
 ) -> Result<()> {
     let semaphore = Arc::new(Semaphore::new(permits_num));
-    let mut handles = Vec::new();
+    let mut handles = HashMap::new();
     let ids = Arc::clone(&repo)
         .lock()
         .await
@@ -106,11 +106,20 @@ async fn save_batch_items(
     for id in ids.into_iter().rev() {
         let permit = semaphore.clone().acquire_owned().await?;
         let repo_inst = Arc::clone(&repo);
-        handles.push(tokio::spawn(async move {
+        let handle = tokio::spawn(async move {
+            let max_retry_count = 1000;
+            let mut retry_count = 0;
             let item = loop {
                 match service::get_item(id).await {
                     Ok(item) => break item,
-                    Err(_) => thread::sleep(Duration::from_millis(50)),
+                    Err(e) => {
+                        thread::sleep(Duration::from_millis(500));
+                        retry_count += 1;
+                        if retry_count >= max_retry_count {
+                            bail!(e)
+                        }
+                        continue;
+                    }
                 }
             };
             match repo_inst.lock().await.deref_mut().save_item(item) {
@@ -118,10 +127,15 @@ async fn save_batch_items(
                 Err(e) => println!("[ERR] repo.save_item (id={id}): err={e}"),
             };
             drop(permit);
-        }));
+            Ok(())
+        });
+        handles.insert(id, handle);
     }
-    for handle in handles {
-        handle.await?;
+    for (id, handle) in handles {
+        match handle.await? {
+            Ok(_) => {}
+            Err(e) => println!("[ERR] main.save_batch_items.handle (id={id}): err={e}"),
+        };
     }
     Ok(())
 }
