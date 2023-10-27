@@ -13,25 +13,6 @@ In the ocean, there are no newspapers. Whales refer to it as "newswaters".
     docker-compose up -d
     ```
 
-### Run the skimmer
-Whales feed by skimming.
-1. Get inside the container:
-    ```bash
-    docker-compose exec skimmer bash
-    ```
-2. Run migrations:
-    ```bash
-    DATABASE_URL=postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}/${DATABASE_DB} diesel migration run
-    ```
-3. Skim items:
-    ```bash
-    cargo run -- items
-    ```
-    Or item urls:
-    ```bash
-    cargo run -- item_urls
-    ```
-
 ### Run the echolocator
 Whales learn about their surrounding environment by echolocating.
 1. Get inside the container:
@@ -41,6 +22,35 @@ Whales learn about their surrounding environment by echolocating.
 2. Run the server:
     ```bash
     cargo run
+    ```
+3. Inference:
+    ```bash
+    curl -X POST http://localhost:3000/inference \
+        -H 'Content-Type: application/json' \
+        -d '{"prompt":"<s>[INST] Sing a song [/INST]"}'
+    ```
+
+### Run the skimmer
+Whales feed by skimming.
+1. Get inside the container:
+    ```bash
+    docker-compose exec skimmer bash
+    ```
+2. Run migrations:
+    ```bash
+    DATABASE_URL=postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB} diesel migration run
+    ```
+3. Skim items:
+    ```bash
+    SKIMMER_IS_JOB=true cargo run -- collect_items
+    ```
+    Or item urls:
+    ```bash
+    SKIMMER_IS_JOB=true cargo run -- collect_item_urls
+    ```
+4. Consume top stories:
+    ```bash
+    SKIMMER_IS_JOB=true cargo run -- consume_top_stories
     ```
 
 ### Run the whistler

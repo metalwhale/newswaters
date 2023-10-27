@@ -4,6 +4,8 @@ services:
     build:
       context: ./echolocator
       dockerfile: Dockerfile.local
+    environment:
+      - ECHOLOCATOR_PORT=3000
     volumes:
       - ./:/usr/src/newswaters/
       - ../models/:/usr/src/models/
@@ -17,9 +19,12 @@ services:
       database:
         condition: service_healthy
     environment:
+      - ECHOLOCATOR_HOST=echolocator
+      - ECHOLOCATOR_PORT=3000
       - DATABASE_HOST=database
-      - DATABASE_DB=hacker_news
-      - DATABASE_USER=whale
+      - DATABASE_PORT=${DATABASE_PORT} # To connect to a remote database if necessary
+      - DATABASE_DB=${DATABASE_DB}
+      - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
     volumes:
       - ./:/usr/src/newswaters/
@@ -34,23 +39,22 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_HOST=database
-      - DATABASE_DB=hacker_news
-      - DATABASE_USER=whale
+      - DATABASE_PORT=${DATABASE_PORT} # To connect to a remote database if necessary
+      - DATABASE_DB=${DATABASE_DB}
+      - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
     volumes:
       - ./:/usr/src/newswaters/
     tty: true
     working_dir: /usr/src/newswaters/whistler/
-  # See: https://hub.docker.com/_/postgres
   database:
-    image: postgres:16.0
+    image: postgres:16.0 # See: https://hub.docker.com/_/postgres
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
-      - POSTGRES_DB=hacker_news
-      - POSTGRES_USER=whale
+      - PGPORT=5432 # Local database port
+      - POSTGRES_DB=${DATABASE_DB}
+      - POSTGRES_USER=${DATABASE_USER}
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
-    expose:
-      - 5432
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready" ]
       interval: 10s

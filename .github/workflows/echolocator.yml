@@ -1,10 +1,10 @@
-name: skimmer
+name: echolocator
 on:
   push:
     branches:
       - main
     paths:
-      - skimmer/**
+      - echolocator/**
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,7 +17,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: "{{defaultContext}}:skimmer"
+          context: "{{defaultContext}}:echolocator"
           file: Dockerfile.deployment
           push: true
-          tags: metalwhaledev/newswaters-skimmer:0.2.0
+          tags: metalwhaledev/newswaters-echolocator:0.1.0
