@@ -242,7 +242,7 @@ fn shorten_text(text: &str, min_line_length: usize, max_total_length: usize) -> 
     for line in text
         .split("\n")
         .into_iter()
-        .map(|l| format!("- {}\n", l.trim()))
+        .map(|l| format!("- {}", l.trim()))
         .collect::<Vec<String>>()
     {
         let length = line.len();
@@ -254,5 +254,5 @@ fn shorten_text(text: &str, min_line_length: usize, max_total_length: usize) -> 
             total_length += length;
         }
     }
-    return lines.join("");
+    return lines.join("\n");
 }

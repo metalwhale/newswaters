@@ -23,11 +23,11 @@ Whales learn about their surrounding environment by echolocating.
     ```bash
     cargo run
     ```
-3. Inference:
+3. Instruct:
     ```bash
-    curl -X POST http://localhost:3000/inference \
+    curl -X POST http://localhost:3000/instruct \
         -H 'Content-Type: application/json' \
-        -d '{"prompt":"<s>[INST] Sing a song [/INST]"}'
+        -d '{"instruction":"Sing a song"}'
     ```
 
 ### Run the skimmer
@@ -40,7 +40,7 @@ Whales feed by skimming.
     ```bash
     DATABASE_URL=postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB} diesel migration run
     ```
-3. Skim items:
+3. Collect items:
     ```bash
     SKIMMER_IS_JOB=true cargo run -- collect_items
     ```
