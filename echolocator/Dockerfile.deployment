@@ -5,7 +5,7 @@ RUN cd /usr/src/ && \
     git clone https://github.com/ggerganov/llama.cpp && \
     cd llama.cpp/ && \
     git checkout b1407 && \
-    # Enable AVX support. See: https://github.com/ggerganov/llama.cpp/blob/b1407/CMakeLists.txt
+    # OCEAN: Enable AVX support. See: https://github.com/ggerganov/llama.cpp/blob/b1407/CMakeLists.txt
     LLAMA_NATIVE=OFF make -j
 
 COPY . /usr/src/echolocator/

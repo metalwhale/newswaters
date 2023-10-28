@@ -110,16 +110,16 @@ pub(crate) async fn get_top_story_ids() -> Result<Vec<i32>> {
 }
 
 #[derive(Deserialize)]
-struct InferenceResponse {
+struct InstructResponse {
     completion: String,
 }
 
 pub(crate) async fn post_instruct_summary(title: &str, text: &str) -> Result<String> {
-    let prompt = format!(
-        "[INST] \
+    let instruction = format!(
+        "\
         Please generate related topics and provide a detailed summary that aligns with the title and omits any irrelevant text. \
-        Summarize only the title if the content is not related to it. \
-        Output ONLY the summary without any additional explanation.\n\n\
+        Output only the title if the content is not related to it. \
+        Don't make up information if it's not provided.\n\n\
         Title:\n\
         {}\n\n\
         Content:\n\
@@ -127,24 +127,24 @@ pub(crate) async fn post_instruct_summary(title: &str, text: &str) -> Result<Str
         Output format:\n\
         - Topics:\n\
         - Summary:\n\
-        [/INST]",
+        ",
         title, text
     );
     let mut payload = HashMap::new();
-    payload.insert("prompt", format!("<s>{}", &prompt));
+    payload.insert("instruction", instruction);
     let client = reqwest::Client::new();
-    let inference_endpoint = format!(
-        "http://{}:{}/inference",
+    let instruct_endpoint = format!(
+        "http://{}:{}/instruct",
         env::var("ECHOLOCATOR_HOST")?,
         env::var("ECHOLOCATOR_PORT")?
     );
     let response = client
-        .post(inference_endpoint)
+        .post(instruct_endpoint)
         .json(&payload)
         .send()
         .await?
-        .json::<InferenceResponse>()
+        .json::<InstructResponse>()
         .await?;
-    let summary = response.completion.replace(&prompt, "").trim().to_string();
+    let summary = response.completion;
     Ok(summary)
 }
