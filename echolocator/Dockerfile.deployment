@@ -1,12 +1,8 @@
+# Previous
+FROM metalwhaledev/newswaters-echolocator:0.2.0 AS previous
+
 # Build
 FROM rust:1.72.0 AS build
-
-RUN cd /usr/src/ && \
-    git clone https://github.com/ggerganov/llama.cpp && \
-    cd llama.cpp/ && \
-    git checkout b1407 && \
-    # OCEAN: Enable AVX support. See: https://github.com/ggerganov/llama.cpp/blob/b1407/CMakeLists.txt
-    LLAMA_NATIVE=OFF make -j
 
 COPY . /usr/src/echolocator/
 
@@ -22,5 +18,5 @@ RUN apt update -y && \
 
 RUN mkdir -p /usr/src/models/
 
-COPY --from=build /usr/src/llama.cpp/main /bin/llama
+COPY --from=previous /bin/llama /bin/llama
 COPY --from=build /usr/src/echolocator/target/release/echolocator /bin/echolocator
