@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - feature/echolocator-model # TEMPORARY
     paths:
       - echolocator/**
 jobs:
@@ -20,4 +21,4 @@ jobs:
           context: "{{defaultContext}}:echolocator"
           file: Dockerfile.deployment
           push: true
-          tags: metalwhaledev/newswaters-echolocator:0.2.0
+          tags: metalwhaledev/newswaters-echolocator:0.2.1

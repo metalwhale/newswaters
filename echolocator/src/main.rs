@@ -106,7 +106,6 @@ async fn instruct(
             "0.0",
             "--prompt",
             &prompt,
-            "--log-disable",
         ])
         .output()?;
     let response = InstructResponse {
