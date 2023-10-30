@@ -20,4 +20,4 @@ jobs:
           context: "{{defaultContext}}:echolocator"
           file: Dockerfile.deployment
           push: true
-          tags: metalwhaledev/newswaters-echolocator:0.2.4
+          tags: metalwhaledev/newswaters-echolocator:0.3.0

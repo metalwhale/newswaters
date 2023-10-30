@@ -16,11 +16,11 @@ use crate::{
     service::{Item, ItemUrl},
 };
 
-pub(crate) struct ItemRepository {
+pub(crate) struct Repository {
     connection: PgConnection,
 }
 
-impl ItemRepository {
+impl Repository {
     pub(crate) fn new() -> Result<Self> {
         let database_url = format!(
             "postgres://{}:{}@{}:{}/{}",
@@ -96,6 +96,22 @@ impl ItemRepository {
         .map(|r| (r.id, r.title, r.text))
         .collect();
         return Ok(summary_missing_item_urls);
+    }
+
+    pub(crate) fn find_item_summaries(&mut self, ids: &[i32]) -> Result<Vec<(i32, Option<String>, Option<String>)>> {
+        let item_summaries = diesel::sql_query(format!(
+            "SELECT id, items.text, summary \
+            FROM unnest(ARRAY[{}]) AS s(i) \
+            JOIN items ON s.i = items.id \
+            JOIN item_urls ON s.i = item_urls.item_id \
+            WHERE items.text IS NOT NULL OR summary IS NOT NULL",
+            ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", ")
+        ))
+        .get_results::<ItemSummaryRecord>(&mut self.connection)?
+        .into_iter()
+        .map(|r| (r.id, r.text, r.summary))
+        .collect();
+        return Ok(item_summaries);
     }
 
     pub(crate) fn insert_item(&mut self, item: Item) -> Result<()> {
@@ -286,4 +302,14 @@ struct SummaryMissingItemUrlRecord {
 struct UpdateItemUrlRecord {
     summary: Option<String>,
     updated_at: DateTime<Local>,
+}
+
+#[derive(QueryableByName)]
+struct ItemSummaryRecord {
+    #[diesel(sql_type = Integer)]
+    id: i32,
+    #[diesel(sql_type = Nullable<Text>)]
+    text: Option<String>,
+    #[diesel(sql_type = Nullable<Text>)]
+    summary: Option<String>,
 }

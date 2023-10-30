@@ -149,3 +149,28 @@ pub(crate) async fn post_instruct_summary(title: &str, text: &str) -> Result<Str
     let summary = response.completion;
     Ok(summary)
 }
+
+#[derive(Deserialize)]
+struct EmbedResponse {
+    embedding: Vec<f32>,
+}
+
+pub(crate) async fn post_embed(sentence: &str) -> Result<Vec<f32>> {
+    let mut payload = HashMap::new();
+    payload.insert("sentence", sentence);
+    let client = reqwest::Client::new();
+    let embed_endpoint = format!(
+        "http://{}:{}/embed",
+        env::var("ECHOLOCATOR_HOST")?,
+        env::var("ECHOLOCATOR_PORT")?
+    );
+    let response = client
+        .post(embed_endpoint)
+        .json(&payload)
+        .send()
+        .await?
+        .json::<EmbedResponse>()
+        .await?;
+    let embedding = response.embedding;
+    Ok(embedding)
+}

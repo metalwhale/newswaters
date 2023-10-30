@@ -1,6 +1,7 @@
 mod repository;
 mod schema;
 mod service;
+mod vector_repository;
 
 use std::{collections::HashMap, env, ops::DerefMut, sync::Arc, time::Duration};
 
@@ -10,13 +11,15 @@ use tokio::{
     sync::{Mutex, Semaphore},
 };
 
-use crate::repository::ItemRepository;
+use crate::repository::Repository;
 use crate::service::ItemUrl;
+use crate::vector_repository::VectorRepository;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
-    let repo = ItemRepository::new()?;
+    let repo = Repository::new()?;
+    let vector_repo = VectorRepository::new().await?;
     let is_job = match env::var("SKIMMER_IS_JOB") {
         Ok(_) => true,
         Err(_) => false,
@@ -26,13 +29,14 @@ async fn main() -> Result<()> {
             "collect_items" => collect_items(Arc::new(Mutex::new(repo)), is_job).await?,
             "collect_item_urls" => collect_item_urls(Arc::new(Mutex::new(repo)), is_job).await?,
             "consume_top_stories" => consume_top_stories(repo, is_job).await?,
+            "consume_top_story_summaries" => consume_top_story_summaries(repo, vector_repo, is_job).await?,
             _ => {}
         }
     }
     Ok(())
 }
 
-async fn collect_items(repo: Arc<Mutex<ItemRepository>>, is_job: bool) -> Result<()> {
+async fn collect_items(repo: Arc<Mutex<Repository>>, is_job: bool) -> Result<()> {
     let items_num: i32 = env::var("SKIMMER_ITEMS_NUM").unwrap_or("1000000".to_string()).parse()?;
     let permits_num: usize = env::var("SKIMMER_PERMITS_NUM").unwrap_or("100".to_string()).parse()?;
     let batch_size: i32 = env::var("SKIMMER_BATCH_SIZE").unwrap_or("1000".to_string()).parse()?;
@@ -54,8 +58,10 @@ async fn collect_items(repo: Arc<Mutex<ItemRepository>>, is_job: bool) -> Result
     }
 }
 
-async fn collect_item_urls(repo: Arc<Mutex<ItemRepository>>, is_job: bool) -> Result<()> {
-    let items_num: i32 = env::var("SKIMMER_ITEMS_NUM").unwrap_or("1000000".to_string()).parse()?;
+async fn collect_item_urls(repo: Arc<Mutex<Repository>>, is_job: bool) -> Result<()> {
+    let items_num: i32 = env::var("SKIMMER_ITEM_URLS_NUM")
+        .unwrap_or("1000000".to_string())
+        .parse()?;
     let permits_num: usize = env::var("SKIMMER_PERMITS_NUM").unwrap_or("10".to_string()).parse()?;
     let batch_size: i32 = env::var("SKIMMER_BATCH_SIZE").unwrap_or("1000".to_string()).parse()?;
     let replicas_num: i32 = env::var("SKIMMER_REPLICAS_NUM").unwrap_or("1".to_string()).parse()?;
@@ -90,7 +96,7 @@ async fn collect_item_urls(repo: Arc<Mutex<ItemRepository>>, is_job: bool) -> Re
     }
 }
 
-async fn consume_top_stories(mut repo: ItemRepository, is_job: bool) -> Result<()> {
+async fn consume_top_stories(mut repo: Repository, is_job: bool) -> Result<()> {
     let top_stories_num: usize = env::var("SKIMMER_TOP_STORIES_NUM")
         .unwrap_or("30".to_string())
         .parse()?;
@@ -101,8 +107,8 @@ async fn consume_top_stories(mut repo: ItemRepository, is_job: bool) -> Result<(
         .unwrap_or("2400".to_string())
         .parse()?;
     loop {
-        let top_story_ids = &service::get_top_story_ids().await?;
-        let mut item_urls = repo.find_summary_missing_item_urls(top_story_ids)?;
+        let top_story_ids = service::get_top_story_ids().await?;
+        let mut item_urls = repo.find_summary_missing_item_urls(&top_story_ids)?;
         // NOTE: We must use `truncate` function here instead of `LIMIT` in the query,
         //   as `LIMIT` doesn't maintain the order of top stories' ids.
         item_urls.truncate(top_stories_num);
@@ -133,8 +139,39 @@ async fn consume_top_stories(mut repo: ItemRepository, is_job: bool) -> Result<(
     }
 }
 
+async fn consume_top_story_summaries(mut repo: Repository, vector_repo: VectorRepository, is_job: bool) -> Result<()> {
+    let top_story_summaries_num: usize = env::var("SKIMMER_TOP_STORY_SUMMARIES_NUM")
+        .unwrap_or("30".to_string())
+        .parse()?;
+    loop {
+        let top_story_ids = service::get_top_story_ids().await?;
+        let missing_ids = vector_repo.find_missing_ids(&top_story_ids).await?;
+        let mut item_summaries = repo.find_item_summaries(&missing_ids)?;
+        item_summaries.truncate(top_story_summaries_num);
+        let mut embeddings = vec![];
+        for (id, text, summary) in item_summaries {
+            let sentence = if let Some(text) = text {
+                text
+            } else if let Some(summary) = summary {
+                summary
+            } else {
+                continue;
+            };
+            embeddings.push((id, service::post_embed(&sentence).await?));
+            println!("[INFO] main.consume_top_story_summaries.post_embed (id={})", id);
+        }
+        vector_repo.upsert_embeddings(embeddings).await?;
+        println!("[INFO] main.consume_top_story_summaries.upsert_embeddings");
+        if is_job {
+            break Ok(());
+        } else {
+            tokio::time::sleep(Duration::from_secs(60)).await;
+        }
+    }
+}
+
 async fn collect_batch_items(
-    repo: Arc<Mutex<ItemRepository>>,
+    repo: Arc<Mutex<Repository>>,
     permits_num: usize,
     batch_min_id: i32,
     batch_max_id: i32,
@@ -185,7 +222,7 @@ async fn collect_batch_items(
 }
 
 async fn collect_batch_item_urls(
-    repo: Arc<Mutex<ItemRepository>>,
+    repo: Arc<Mutex<Repository>>,
     permits_num: usize,
     batch_min_id: i32,
     batch_max_id: i32,
