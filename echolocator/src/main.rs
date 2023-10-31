@@ -100,6 +100,8 @@ async fn instruct(
         .args([
             "--model",
             &state.model_path,
+            "--threads",
+            &env::var("ECHOLOCATOR_THREADS").unwrap_or("4".to_string()),
             "--ctx-size",
             &env::var("ECHOLOCATOR_CTX_SIZE").unwrap_or("8192".to_string()),
             "--temp",
