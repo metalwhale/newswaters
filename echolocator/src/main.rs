@@ -1,4 +1,4 @@
-use std::{env, process::Command};
+use std::env;
 
 use anyhow::{Context, Error, Result};
 use axum::{
@@ -9,7 +9,7 @@ use axum::{
 use futures_util::StreamExt;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use tokio::{fs::File, io::AsyncWriteExt};
+use tokio::{fs::File, io::AsyncWriteExt, process::Command};
 
 #[derive(Clone)]
 struct AppState {
@@ -112,7 +112,8 @@ async fn instruct(
             &prompt,
             "--log-disable",
         ])
-        .output()?;
+        .output()
+        .await?;
     let response = InstructResponse {
         completion: String::from_utf8(output.stdout)?
             // TODO: Prevent the output of the prompt rather than having to manually remove it from the completion

@@ -109,19 +109,11 @@ async fn consume_top_stories(mut repo: ItemRepository, is_job: bool) -> Result<(
         for (id, title, text) in item_urls {
             let shortened_text = shorten_text(&text, text_min_line_length, text_max_total_length);
             let start_time = std::time::Instant::now();
-            let max_retry_count = 20;
-            let mut retry_count = 0;
-            let summary = loop {
-                match service::post_instruct_summary(&title, &shortened_text).await {
-                    Ok(summary) => break summary,
-                    Err(e) => {
-                        tokio::time::sleep(Duration::from_secs(60)).await;
-                        retry_count += 1;
-                        if retry_count >= max_retry_count {
-                            bail!(e)
-                        }
-                        continue;
-                    }
+            let summary = match service::post_instruct_summary(&title, &shortened_text).await {
+                Ok(summary) => summary,
+                Err(e) => {
+                    println!("[ERR] service.post_instruct_summary (id={id}): err={e}");
+                    continue;
                 }
             };
             println!(

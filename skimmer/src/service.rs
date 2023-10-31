@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env};
+use std::{collections::HashMap, env, time::Duration};
 
 use anyhow::{bail, Result};
 use chromiumoxide::browser::{Browser, BrowserConfig};
@@ -140,6 +140,7 @@ pub(crate) async fn post_instruct_summary(title: &str, text: &str) -> Result<Str
     );
     let response = client
         .post(instruct_endpoint)
+        .timeout(Duration::from_secs(600))
         .json(&payload)
         .send()
         .await?
