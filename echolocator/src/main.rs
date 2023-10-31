@@ -103,7 +103,7 @@ async fn instruct(
             "--ctx-size",
             &env::var("ECHOLOCATOR_CTX_SIZE").unwrap_or("8192".to_string()),
             "--temp",
-            "0.0",
+            &env::var("ECHOLOCATOR_TEMP").unwrap_or("0.8".to_string()),
             "--repeat-penalty",
             &env::var("ECHOLOCATOR_REPEAT_PENALTY").unwrap_or("1.2".to_string()),
             "--prompt",
