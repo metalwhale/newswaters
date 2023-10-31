@@ -1,6 +1,6 @@
 [package]
 name = "echolocator"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,4 +11,8 @@ axum = "0.6.20"
 futures-util = "0.3.28"
 reqwest = { version = "0.11.22", features = ["stream"] }
 serde = { version = "1.0.189", features = ["derive"] }
-tokio = { version = "1.33.0", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.33.0", features = [
+    "macros",
+    "rt-multi-thread",
+    "process",
+] }
