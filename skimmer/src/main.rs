@@ -162,8 +162,10 @@ async fn consume_top_story_summaries(mut repo: Repository, vector_repo: VectorRe
             embeddings.push((id, service::post_embed(&sentence).await?));
             println!("[INFO] main.consume_top_story_summaries.post_embed (id={})", id);
         }
-        vector_repo.upsert_embeddings(embeddings).await?;
-        println!("[INFO] main.consume_top_story_summaries.upsert_embeddings");
+        if embeddings.len() > 0 {
+            vector_repo.upsert_embeddings(embeddings).await?;
+            println!("[INFO] main.consume_top_story_summaries.upsert_embeddings");
+        }
         if is_job {
             break Ok(());
         } else {
