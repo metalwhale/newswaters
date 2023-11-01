@@ -47,6 +47,11 @@ services:
       - DATABASE_DB=${DATABASE_DB}
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - VECTOR_DATABASE_HOST=vector_database
+      - VECTOR_DATABASE_PORT=6334
+      - VECTOR_DATABASE_COLLECTION=app
+      - ECHOLOCATOR_HOST=echolocator
+      - ECHOLOCATOR_PORT=3000
     volumes:
       - ./:/usr/src/newswaters/
     tty: true
