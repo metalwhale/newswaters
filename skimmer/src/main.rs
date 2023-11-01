@@ -19,7 +19,6 @@ use crate::vector_repository::VectorRepository;
 async fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
     let repo = Repository::new()?;
-    let vector_repo = VectorRepository::new().await?;
     let is_job = match env::var("SKIMMER_IS_JOB") {
         Ok(_) => true,
         Err(_) => false,
@@ -29,7 +28,10 @@ async fn main() -> Result<()> {
             "collect_items" => collect_items(Arc::new(Mutex::new(repo)), is_job).await?,
             "collect_item_urls" => collect_item_urls(Arc::new(Mutex::new(repo)), is_job).await?,
             "consume_top_stories" => consume_top_stories(repo, is_job).await?,
-            "consume_top_story_summaries" => consume_top_story_summaries(repo, vector_repo, is_job).await?,
+            "consume_top_story_summaries" => {
+                let vector_repo = VectorRepository::new().await?;
+                consume_top_story_summaries(repo, vector_repo, is_job).await?
+            }
             _ => {}
         }
     }
