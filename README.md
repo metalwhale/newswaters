@@ -73,6 +73,16 @@ Whales communicate through whistling.
     ```bash
     docker-compose exec whistler bash
     ```
+2. Run the server:
+    ```bash
+    cargo run
+    ```
+3. Find similar items:
+    ```bash
+    curl -X POST http://localhost:3000/find-similar-items \
+        -H 'Content-Type: application/json' \
+        -d '{"sentence":"machine learning", "limit": 20}'
+    ```
 
 ## References
 ### Blogs
