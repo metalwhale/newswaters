@@ -19,13 +19,17 @@ services:
       database:
         condition: service_healthy
     environment:
-      - ECHOLOCATOR_HOST=echolocator
-      - ECHOLOCATOR_PORT=3000
       - DATABASE_HOST=database
       - DATABASE_PORT=${DATABASE_PORT} # To connect to a remote database if necessary
       - DATABASE_DB=${DATABASE_DB}
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - VECTOR_DATABASE_HOST=vector_database
+      - VECTOR_DATABASE_PORT=6334
+      - VECTOR_DATABASE_COLLECTION=app
+      - VECTOR_DATABASE_SIZE=768 # See: https://huggingface.co/jinaai/jina-embeddings-v2-base-en/blob/d411fe9/config.json#L18
+      - ECHOLOCATOR_HOST=echolocator
+      - ECHOLOCATOR_PORT=3000
     volumes:
       - ./:/usr/src/newswaters/
     tty: true
@@ -69,3 +73,9 @@ services:
       - PGADMIN_DEFAULT_PASSWORD=${DATABASE_GUI_ADMIN_PASSWORD}
     ports:
       - 8080:80
+  vector_database:
+    image: qdrant/qdrant:v1.6.1
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    volumes:
+      - ./vector_database/storage:/qdrant/storage

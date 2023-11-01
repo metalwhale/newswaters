@@ -23,11 +23,21 @@ Whales learn about their surrounding environment by echolocating.
     ```bash
     cargo run
     ```
+    Or if you are running on `arm64` ([reference](https://github.com/huggingface/candle/issues/494#issuecomment-1682919922)):
+    ```bash
+    RUSTFLAGS='-C target-feature=+fp16' cargo run
+    ```
 3. Instruct:
     ```bash
     curl -X POST http://localhost:3000/instruct \
         -H 'Content-Type: application/json' \
         -d '{"instruction":"Sing a song"}'
+    ```
+    Or embed:
+    ```bash
+    curl -X POST http://localhost:3000/embed \
+        -H 'Content-Type: application/json' \
+        -d '{"sentence":"Sing a song"}'
     ```
 
 ### Run the skimmer
@@ -52,6 +62,10 @@ Whales feed by skimming.
     ```bash
     SKIMMER_IS_JOB=true cargo run -- consume_top_stories
     ```
+    Or top story summaries:
+    ```bash
+    SKIMMER_IS_JOB=true cargo run -- consume_top_story_summaries
+    ```
 
 ### Run the whistler
 Whales communicate through whistling.
@@ -61,8 +75,12 @@ Whales communicate through whistling.
     ```
 
 ## References
+### Blogs
 - [Building LLM applications for production](https://huyenchip.com/2023/04/11/llm-engineering.html)
 - [Patterns for Building LLM-based Systems & Products](https://eugeneyan.com/writing/llm-patterns/)
-- [LLM Applications](https://github.com/ray-project/llm-applications)
 - [Optimizing your LLM in production](https://huggingface.co/blog/optimize-llm)
 - [Fine-tuning a masked language model](https://huggingface.co/learn/nlp-course/chapter7/3)
+
+### Repositories
+- [LLM Applications](https://github.com/ray-project/llm-applications)
+- [Demystifying Advanced RAG Pipelines](https://github.com/pchunduri6/rag-demystified)
