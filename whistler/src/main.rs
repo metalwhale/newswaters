@@ -2,7 +2,7 @@ mod repository;
 mod service;
 mod vector_repository;
 
-use std::{env, ops::DerefMut, sync::Arc};
+use std::{env, sync::Arc};
 
 use anyhow::{Error, Result};
 use axum::{
@@ -12,14 +12,13 @@ use axum::{
 };
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
 
 use crate::repository::Repository;
 use crate::vector_repository::VectorRepository;
 
 #[derive(Clone)]
 struct AppState {
-    repo: Arc<Mutex<Repository>>,
+    repo: Arc<Repository>,
     vector_repo: Arc<VectorRepository>,
 }
 
@@ -64,7 +63,7 @@ async fn main() -> Result<()> {
 }
 
 async fn initialize() -> Result<AppState> {
-    let repo = Arc::new(Mutex::new(Repository::new()?));
+    let repo = Arc::new(Repository::new()?);
     let vector_repo = Arc::new(VectorRepository::new().await?);
     let state = AppState { repo, vector_repo };
     return Ok(state);
@@ -88,7 +87,7 @@ async fn find_similar_items(
     let embedding = service::post_embed(&payload.sentence).await?;
     let points = state.vector_repo.search_points(embedding, payload.limit).await?;
     let ids = points.iter().map(|(id, _score)| *id).collect::<Vec<i32>>();
-    let mut items_map = state.repo.lock().await.deref_mut().find_items(&ids)?;
+    let mut items_map = state.repo.find_items(&ids)?;
     let mut items = vec![];
     for (id, score) in points {
         if let Some((title, url)) = items_map.remove(&id) {
