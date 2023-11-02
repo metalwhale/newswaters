@@ -2,11 +2,12 @@ use std::collections::HashMap;
 use std::env;
 
 use anyhow::Result;
+use diesel::r2d2::{ConnectionManager, Pool};
+use diesel::PgConnection;
 use diesel::{prelude::*, sql_types::*};
-use diesel::{Connection, PgConnection};
 
 pub(crate) struct Repository {
-    connection: PgConnection,
+    pool: Pool<ConnectionManager<PgConnection>>,
 }
 
 impl Repository {
@@ -19,19 +20,20 @@ impl Repository {
             env::var("DATABASE_PORT").unwrap_or("5432".to_string()),
             env::var("DATABASE_DB")?,
         );
-        return Ok(Self {
-            connection: PgConnection::establish(&database_url)?,
-        });
+        let pool = Pool::builder()
+            .test_on_check_out(true)
+            .build(ConnectionManager::<PgConnection>::new(database_url))?;
+        return Ok(Self { pool });
     }
 
-    pub(crate) fn find_items(&mut self, ids: &[i32]) -> Result<HashMap<i32, (String, String)>> {
+    pub(crate) fn find_items(&self, ids: &[i32]) -> Result<HashMap<i32, (String, String)>> {
         let items_map = diesel::sql_query(format!(
             "SELECT id, title, url \
             FROM unnest(ARRAY[{}]) AS s(i) \
             JOIN items ON s.i = items.id",
             ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", ")
         ))
-        .get_results::<ItemRecord>(&mut self.connection)?
+        .get_results::<ItemRecord>(&mut self.pool.get()?)?
         .into_iter()
         .map(|r| (r.id, (r.title, r.url)))
         .collect();
