@@ -26,7 +26,7 @@ impl Repository {
         return Ok(Self { pool });
     }
 
-    pub(crate) fn find_items(&self, ids: &[i32]) -> Result<HashMap<i32, (String, String)>> {
+    pub(crate) fn find_items(&self, ids: &[i32]) -> Result<HashMap<i32, (Option<String>, Option<String>)>> {
         let items_map = diesel::sql_query(format!(
             "SELECT id, title, url \
             FROM unnest(ARRAY[{}]) AS s(i) \
@@ -45,8 +45,8 @@ impl Repository {
 struct ItemRecord {
     #[diesel(sql_type = Integer)]
     id: i32,
-    #[diesel(sql_type = Text)]
-    title: String,
-    #[diesel(sql_type = Text)]
-    url: String,
+    #[diesel(sql_type = Nullable<Text>)]
+    title: Option<String>,
+    #[diesel(sql_type = Nullable<Text>)]
+    url: Option<String>,
 }

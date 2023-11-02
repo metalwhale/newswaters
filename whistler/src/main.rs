@@ -77,7 +77,7 @@ struct FindSimilarItemsRequest {
 
 #[derive(Serialize)]
 struct FindSimilarItemsResponse {
-    items: Vec<(i32, f32, String, String)>,
+    items: Vec<(i32, f32, Option<String>, Option<String>)>,
 }
 
 async fn find_similar_items(
