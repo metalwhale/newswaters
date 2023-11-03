@@ -52,6 +52,9 @@ services:
       - VECTOR_DATABASE_COLLECTION=app
       - ECHOLOCATOR_HOST=echolocator
       - ECHOLOCATOR_PORT=3000
+      - WHISTLER_PORT=3000
+    ports:
+      - 3000:3000
     volumes:
       - ./:/usr/src/newswaters/
     tty: true

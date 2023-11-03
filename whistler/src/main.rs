@@ -10,8 +10,9 @@ use axum::{
     response::{IntoResponse, Response},
     routing, Json, Router,
 };
-use reqwest::StatusCode;
+use reqwest::{Method, StatusCode};
 use serde::{Deserialize, Serialize};
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::repository::Repository;
 use crate::vector_repository::VectorRepository;
@@ -46,6 +47,10 @@ where
 async fn main() -> Result<()> {
     let state = initialize().await?;
     let prefix = env::var("WHISTLER_PREFIX").unwrap_or("".to_string());
+    let cors = CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST])
+        .allow_headers([reqwest::header::CONTENT_TYPE])
+        .allow_origin(Any);
     let app = Router::new()
         .nest(
             &prefix,
@@ -53,6 +58,7 @@ async fn main() -> Result<()> {
                 .route("/healthz", routing::get(|| async { "Ok" }))
                 .route("/find-similar-items", routing::post(find_similar_items)),
         )
+        .layer(cors)
         .with_state(state);
     let port = env::var("WHISTLER_PORT").unwrap_or("3000".to_string());
     axum::Server::bind(&format!("0.0.0.0:{}", port).parse()?)
