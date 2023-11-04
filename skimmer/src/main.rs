@@ -1,11 +1,16 @@
+#[macro_use]
+extern crate tantivy;
+
 mod repository;
 mod schema;
 mod service;
+mod text_repository;
 mod vector_repository;
 
 use std::{collections::HashMap, env, ops::DerefMut, sync::Arc, time::Duration};
 
 use anyhow::{bail, Result};
+use text_repository::TextRepository;
 use tokio::{
     self,
     sync::{Mutex, Semaphore},
@@ -30,7 +35,8 @@ async fn main() -> Result<()> {
             "consume_top_stories" => consume_top_stories(repo, is_job).await?,
             "consume_top_story_summaries" => {
                 let vector_repo = VectorRepository::new().await?;
-                consume_top_story_summaries(repo, vector_repo, is_job).await?
+                let text_repo = TextRepository::new()?;
+                consume_top_story_summaries(repo, vector_repo, text_repo, is_job).await?
             }
             _ => {}
         }
@@ -141,16 +147,23 @@ async fn consume_top_stories(mut repo: Repository, is_job: bool) -> Result<()> {
     }
 }
 
-async fn consume_top_story_summaries(mut repo: Repository, vector_repo: VectorRepository, is_job: bool) -> Result<()> {
+async fn consume_top_story_summaries(
+    mut repo: Repository,
+    vector_repo: VectorRepository,
+    text_repo: TextRepository,
+    is_job: bool,
+) -> Result<()> {
     let top_story_summaries_num: usize = env::var("SKIMMER_TOP_STORY_SUMMARIES_NUM")
         .unwrap_or("30".to_string())
         .parse()?;
     loop {
         let top_story_ids = service::get_top_story_ids().await?;
         let missing_ids = vector_repo.find_missing_ids(&top_story_ids).await?;
+        // TODO: Find missing ids in the text repo on its own, rather than relying on the vector repo
         let mut item_summaries = repo.find_item_summaries(&missing_ids)?;
         item_summaries.truncate(top_story_summaries_num);
         let mut embeddings = vec![];
+        let mut documents = vec![];
         for (id, text, summary) in item_summaries {
             let sentence = if let Some(text) = text {
                 text
@@ -160,11 +173,16 @@ async fn consume_top_story_summaries(mut repo: Repository, vector_repo: VectorRe
                 continue;
             };
             embeddings.push((id, service::post_embed(&sentence).await?));
+            documents.push((id, sentence));
             println!("[INFO] main.consume_top_story_summaries.post_embed (id={})", id);
         }
         if embeddings.len() > 0 {
             vector_repo.upsert_embeddings(embeddings).await?;
             println!("[INFO] main.consume_top_story_summaries.upsert_embeddings");
+        }
+        if documents.len() > 0 {
+            text_repo.add_documents(documents)?;
+            println!("[INFO] main.consume_top_story_summaries.add_documents");
         }
         if is_job {
             break Ok(());
