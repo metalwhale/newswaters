@@ -1,10 +1,10 @@
-name: whistler
+name: search-engine
 on:
   push:
     branches:
       - main
     paths:
-      - whistler/**
+      - search-engine/**
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,7 +17,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: "{{defaultContext}}:whistler"
+          context: "{{defaultContext}}:search-engine"
           file: Dockerfile.deployment
           push: true
-          tags: metalwhaledev/newswaters-whistler:0.2.0
+          tags: metalwhaledev/newswaters-search-engine:0.1.0

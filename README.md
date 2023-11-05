@@ -13,6 +13,16 @@ In the ocean, there are no newspapers. Whales refer to it as "newswaters".
     docker-compose up -d
     ```
 
+### Run the search engine
+1. Get inside the container:
+    ```bash
+    docker-compose exec search-engine bash
+    ```
+2. Run the server:
+    ```bash
+    cargo run
+    ```
+
 ### Run the echolocator
 Whales learn about their surrounding environment by echolocating.
 1. Get inside the container:
@@ -77,9 +87,9 @@ Whales communicate through whistling.
     ```bash
     cargo run
     ```
-3. Find similar items:
+3. Search similar items:
     ```bash
-    curl -X POST http://localhost:3000/find-similar-items \
+    curl -X POST http://localhost:3000/search-similar-items \
         -H 'Content-Type: application/json' \
         -d '{"sentence":"machine learning", "limit": 20}'
     ```

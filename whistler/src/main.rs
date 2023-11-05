@@ -1,6 +1,5 @@
 mod repository;
 mod service;
-mod vector_repository;
 
 use std::{env, sync::Arc};
 
@@ -12,15 +11,15 @@ use axum::{
 };
 use reqwest::{Method, StatusCode};
 use serde::{Deserialize, Serialize};
+use service::search_engine;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::repository::Repository;
-use crate::vector_repository::VectorRepository;
+use crate::service::inference;
 
 #[derive(Clone)]
 struct AppState {
     repo: Arc<Repository>,
-    vector_repo: Arc<VectorRepository>,
 }
 
 // See: https://github.com/tokio-rs/axum/blob/c979672/examples/anyhow-error-response/src/main.rs#L34-L57
@@ -56,7 +55,7 @@ async fn main() -> Result<()> {
             &prefix,
             Router::new()
                 .route("/healthz", routing::get(|| async { "Ok" }))
-                .route("/find-similar-items", routing::post(find_similar_items)),
+                .route("/search-similar-items", routing::post(search_similar_items)),
         )
         .layer(cors)
         .with_state(state);
@@ -70,28 +69,27 @@ async fn main() -> Result<()> {
 
 async fn initialize() -> Result<AppState> {
     let repo = Arc::new(Repository::new()?);
-    let vector_repo = Arc::new(VectorRepository::new().await?);
-    let state = AppState { repo, vector_repo };
+    let state = AppState { repo };
     return Ok(state);
 }
 
 #[derive(Deserialize)]
-struct FindSimilarItemsRequest {
+struct SearchSimilarItemsRequest {
     sentence: String,
     limit: u64,
 }
 
 #[derive(Serialize)]
-struct FindSimilarItemsResponse {
+struct SearchSimilarItemsResponse {
     items: Vec<(i32, f32, Option<String>, Option<String>)>,
 }
 
-async fn find_similar_items(
+async fn search_similar_items(
     State(state): State<AppState>,
-    Json(payload): Json<FindSimilarItemsRequest>,
-) -> Result<Json<FindSimilarItemsResponse>, AppError> {
-    let embedding = service::post_embed(&payload.sentence).await?;
-    let points = state.vector_repo.search_points(embedding, payload.limit).await?;
+    Json(payload): Json<SearchSimilarItemsRequest>,
+) -> Result<Json<SearchSimilarItemsResponse>, AppError> {
+    let embedding = inference::embed(&payload.sentence).await?;
+    let points = search_engine::search(embedding, payload.limit).await?;
     let ids = points.iter().map(|(id, _score)| *id).collect::<Vec<i32>>();
     let mut items_map = state.repo.find_items(&ids)?;
     let mut items = vec![];
@@ -100,6 +98,6 @@ async fn find_similar_items(
             items.push((id, score, title, url))
         }
     }
-    let response = FindSimilarItemsResponse { items };
+    let response = SearchSimilarItemsResponse { items };
     Ok(Json(response))
 }

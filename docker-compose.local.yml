@@ -1,5 +1,56 @@
 version: "3"
 services:
+  ##########
+  # Database
+  ##########
+  database:
+    image: postgres:16.0 # See: https://hub.docker.com/_/postgres
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - PGPORT=5432 # Local database port
+      - POSTGRES_DB=${DATABASE_DB}
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./database/data:/var/lib/postgresql/data
+  database-gui:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${DATABASE_GUI_ADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${DATABASE_GUI_ADMIN_PASSWORD}
+    ports:
+      - 8080:80
+  ###############
+  # Search engine
+  ###############
+  search-engine:
+    build:
+      context: search-engine
+      dockerfile: Dockerfile.local
+    environment:
+      - SEARCH_ENGINE_PORT=3000
+      - SEARCH_ENGINE_VECTOR_HOST=search-engine-vector
+      - SEARCH_ENGINE_VECTOR_PORT=6334
+      - SEARCH_ENGINE_VECTOR_COLLECTION=app
+      - SEARCH_ENGINE_VECTOR_SIZE=768 # See: https://huggingface.co/jinaai/jina-embeddings-v2-base-en/blob/d411fe9/config.json#L18
+    volumes:
+      - ./:/usr/src/newswaters/
+    tty: true
+    working_dir: /usr/src/newswaters/search-engine/
+  search-engine-vector:
+    image: qdrant/qdrant:v1.6.1
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    volumes:
+      - ./search-engine-vector/storage:/qdrant/storage
+  ##############
+  # Applications
+  ##############
   echolocator:
     build:
       context: ./echolocator
@@ -24,10 +75,8 @@ services:
       - DATABASE_DB=${DATABASE_DB}
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - VECTOR_DATABASE_HOST=vector_database
-      - VECTOR_DATABASE_PORT=6334
-      - VECTOR_DATABASE_COLLECTION=app
-      - VECTOR_DATABASE_SIZE=768 # See: https://huggingface.co/jinaai/jina-embeddings-v2-base-en/blob/d411fe9/config.json#L18
+      - SEARCH_ENGINE_HOST=search-engine
+      - SEARCH_ENGINE_PORT=3000
       - ECHOLOCATOR_HOST=echolocator
       - ECHOLOCATOR_PORT=3000
     volumes:
@@ -47,9 +96,8 @@ services:
       - DATABASE_DB=${DATABASE_DB}
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - VECTOR_DATABASE_HOST=vector_database
-      - VECTOR_DATABASE_PORT=6334
-      - VECTOR_DATABASE_COLLECTION=app
+      - SEARCH_ENGINE_HOST=search-engine
+      - SEARCH_ENGINE_PORT=3000
       - ECHOLOCATOR_HOST=echolocator
       - ECHOLOCATOR_PORT=3000
       - WHISTLER_PORT=3000
@@ -59,31 +107,3 @@ services:
       - ./:/usr/src/newswaters/
     tty: true
     working_dir: /usr/src/newswaters/whistler/
-  database:
-    image: postgres:16.0 # See: https://hub.docker.com/_/postgres
-    environment:
-      - PGDATA=/var/lib/postgresql/data/pgdata
-      - PGPORT=5432 # Local database port
-      - POSTGRES_DB=${DATABASE_DB}
-      - POSTGRES_USER=${DATABASE_USER}
-      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - ./database/data:/var/lib/postgresql/data
-  database_gui:
-    image: dpage/pgadmin4
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=${DATABASE_GUI_ADMIN_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${DATABASE_GUI_ADMIN_PASSWORD}
-    ports:
-      - 8080:80
-  vector_database:
-    image: qdrant/qdrant:v1.6.1
-    environment:
-      - QDRANT__SERVICE__GRPC_PORT=6334
-    volumes:
-      - ./vector_database/storage:/qdrant/storage

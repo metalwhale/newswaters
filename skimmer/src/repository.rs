@@ -13,7 +13,7 @@ use diesel::{
 
 use crate::{
     schema::{item_urls, items, sql_types::ItemType},
-    service::{Item, ItemUrl},
+    service::hacker_news::{Item, ItemUrl},
 };
 
 pub(crate) struct Repository {
@@ -82,7 +82,7 @@ impl Repository {
         return Ok(missing_item_urls);
     }
 
-    pub(crate) fn find_summary_missing_item_urls(&mut self, ids: &[i32]) -> Result<Vec<(i32, String, String)>> {
+    pub(crate) fn find_summary_missing_item_urls(&mut self, ids: Vec<i32>) -> Result<Vec<(i32, String, String)>> {
         let summary_missing_item_urls = diesel::sql_query(format!(
             "SELECT item_id AS id, title, item_urls.text \
             FROM unnest(ARRAY[{}]) AS s(i) \
@@ -98,7 +98,7 @@ impl Repository {
         return Ok(summary_missing_item_urls);
     }
 
-    pub(crate) fn find_item_summaries(&mut self, ids: &[i32]) -> Result<Vec<(i32, Option<String>, Option<String>)>> {
+    pub(crate) fn find_item_summaries(&mut self, ids: Vec<i32>) -> Result<Vec<(i32, Option<String>, Option<String>)>> {
         let item_summaries = diesel::sql_query(format!(
             "SELECT id, items.text, summary \
             FROM unnest(ARRAY[{}]) AS s(i) \
