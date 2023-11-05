@@ -115,7 +115,7 @@ async fn consume_top_stories(mut repo: Repository, is_job: bool) -> Result<()> {
             let summary = match inference::instruct_summary(&title, &shortened_text).await {
                 Ok(summary) => summary,
                 Err(e) => {
-                    println!("[ERR] service.post_instruct_summary (id={id}): err={e}");
+                    println!("[ERR] inference.instruct_summary (id={id}): err={e}");
                     continue;
                 }
             };
@@ -145,7 +145,6 @@ async fn consume_top_story_summaries(mut repo: Repository, is_job: bool) -> Resu
         let missing_ids = search_engine::find_missing(top_story_ids).await?;
         let mut item_summaries = repo.find_item_summaries(missing_ids)?;
         item_summaries.truncate(top_story_summaries_num);
-        let mut embeddings = vec![];
         for (id, text, summary) in item_summaries {
             let sentence = if let Some(text) = text {
                 text
@@ -154,12 +153,9 @@ async fn consume_top_story_summaries(mut repo: Repository, is_job: bool) -> Resu
             } else {
                 continue;
             };
-            embeddings.push((id, inference::embed(&sentence).await?));
-            println!("[INFO] main.consume_top_story_summaries.post_embed (id={})", id);
-        }
-        if embeddings.len() > 0 {
+            let embeddings = vec![(id, inference::embed(&sentence).await?)];
             search_engine::upsert(embeddings).await?;
-            println!("[INFO] main.consume_top_story_summaries.upsert_embeddings");
+            println!("[INFO] main.consume_top_story_summaries (id={})", id);
         }
         if is_job {
             break Ok(());
