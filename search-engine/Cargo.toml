@@ -1,6 +1,6 @@
 [package]
-name = "whistler"
-version = "0.2.0"
+name = "search-engine"
+version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -8,8 +8,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.75"
 axum = "0.6.20"
-diesel = { version = "2.1.3", features = ["postgres", "r2d2"] }
-reqwest = { version = "0.11.22", features = ["json"] }
+qdrant-client = "1.6.0"
 serde = { version = "1.0.190", features = ["derive"] }
 tokio = { version = "1.33.0", features = ["macros", "rt-multi-thread"] }
-tower-http = { version = "0.4.4", features = ["cors"] }

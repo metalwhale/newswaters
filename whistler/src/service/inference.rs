@@ -9,17 +9,17 @@ struct EmbedResponse {
 }
 
 // TODO: DRY this function to eliminate duplication with a similar one in "skimmer".
-pub(crate) async fn post_embed(sentence: &str) -> Result<Vec<f32>> {
+pub(crate) async fn embed(sentence: &str) -> Result<Vec<f32>> {
     let mut payload = HashMap::new();
     payload.insert("sentence", sentence);
     let client = reqwest::Client::new();
-    let embed_endpoint = format!(
+    let endpoint = format!(
         "http://{}:{}/embed",
         env::var("ECHOLOCATOR_HOST")?,
         env::var("ECHOLOCATOR_PORT")?
     );
     let response = client
-        .post(embed_endpoint)
+        .post(endpoint)
         .json(&payload)
         .send()
         .await?
