@@ -14,5 +14,3 @@ RUN apt update -y && \
     apt install -y libpq5
 
 COPY --from=build /usr/src/whistler/target/release/whistler /bin/whistler
-
-WORKDIR /usr/src/whistler/
