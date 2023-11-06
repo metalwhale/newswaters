@@ -1,7 +1,7 @@
 use std::{collections::HashMap, env};
 
 use anyhow::Result;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
 struct FindMissingResponse {
@@ -28,24 +28,25 @@ pub(crate) async fn find_missing(ids: Vec<i32>) -> Result<Vec<i32>> {
     Ok(missing_ids)
 }
 
-#[derive(Deserialize)]
-struct UpsertResponse {}
+#[derive(Serialize)]
+struct UpsertRequest {
+    id: i32,
+    sentence: String,
+    embedding: Vec<f32>,
+}
 
-pub(crate) async fn upsert(embeddings: Vec<(i32, Vec<f32>)>) -> Result<()> {
-    let mut payload = HashMap::new();
-    payload.insert("embeddings", embeddings);
+pub(crate) async fn upsert(id: i32, sentence: String, embedding: Vec<f32>) -> Result<()> {
+    let payload = UpsertRequest {
+        id,
+        sentence,
+        embedding,
+    };
     let client = reqwest::Client::new();
     let endpoint = format!(
         "http://{}:{}/upsert",
         env::var("SEARCH_ENGINE_HOST")?,
         env::var("SEARCH_ENGINE_PORT")?
     );
-    client
-        .post(endpoint)
-        .json(&payload)
-        .send()
-        .await?
-        .json::<UpsertResponse>()
-        .await?;
+    client.post(endpoint).json(&payload).send().await?;
     Ok(())
 }

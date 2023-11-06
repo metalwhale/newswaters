@@ -1,6 +1,6 @@
 [package]
 name = "search-engine"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -10,4 +10,5 @@ anyhow = "1.0.75"
 axum = "0.6.20"
 qdrant-client = "1.6.0"
 serde = { version = "1.0.190", features = ["derive"] }
+tantivy = "0.21.1"
 tokio = { version = "1.33.0", features = ["macros", "rt-multi-thread"] }

@@ -153,8 +153,8 @@ async fn consume_top_story_summaries(mut repo: Repository, is_job: bool) -> Resu
             } else {
                 continue;
             };
-            let embeddings = vec![(id, inference::embed(&sentence).await?)];
-            search_engine::upsert(embeddings).await?;
+            let embedding = inference::embed(&sentence).await?;
+            search_engine::upsert(id, sentence, embedding).await?;
             println!("[INFO] main.consume_top_story_summaries (id={})", id);
         }
         if is_job {
