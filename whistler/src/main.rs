@@ -89,9 +89,12 @@ async fn search_similar_items(
     Json(payload): Json<SearchSimilarItemsRequest>,
 ) -> Result<Json<SearchSimilarItemsResponse>, AppError> {
     let embedding = inference::embed(&payload.sentence).await?;
-    let points = search_engine::search(embedding, payload.limit).await?;
+    let points = search_engine::search_similar(payload.sentence, embedding, payload.limit).await?;
     let ids = points.iter().map(|(id, _score)| *id).collect::<Vec<i32>>();
-    let mut items_map = state.repo.find_items(&ids)?;
+    let mut items_map = match state.repo.find_items(&ids) {
+        Ok(items_map) => items_map,
+        Err(_) => return Ok(Json(SearchSimilarItemsResponse { items: vec![] })),
+    };
     let mut items = vec![];
     for (id, score) in points {
         if let Some((title, url)) = items_map.remove(&id) {
