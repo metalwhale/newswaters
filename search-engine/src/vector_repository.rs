@@ -4,8 +4,8 @@ use anyhow::Result;
 use qdrant_client::{
     prelude::{Payload, QdrantClient},
     qdrant::{
-        point_id::PointIdOptions, vectors_config::Config, CreateCollection, Distance, PointId,
-        PointStruct, SearchPoints, VectorParams, VectorsConfig,
+        point_id::PointIdOptions, vectors_config::Config, CreateCollection, Distance, PointId, PointStruct,
+        SearchPoints, VectorParams, VectorsConfig,
     },
 };
 
@@ -49,9 +49,7 @@ impl VectorRepository {
             .client
             .get_points(
                 &self.collection_name,
-                &ids.iter()
-                    .map(|i| (*i as u64).into())
-                    .collect::<Vec<PointId>>(),
+                &ids.iter().map(|i| (*i as u64).into()).collect::<Vec<PointId>>(),
                 Some(false),
                 Some(false),
                 None,
@@ -78,18 +76,15 @@ impl VectorRepository {
         Ok(missing_ids)
     }
 
-    pub(crate) async fn upsert(&self, embeddings: Vec<(i32, Vec<f32>)>) -> Result<()> {
-        let points = embeddings
-            .into_iter()
-            .map(|(id, embeddings)| PointStruct::new(id as u64, embeddings, Payload::new()))
-            .collect();
+    pub(crate) async fn upsert(&self, id: i32, embedding: Vec<f32>) -> Result<()> {
+        let points = vec![PointStruct::new(id as u64, embedding, Payload::new())];
         self.client
             .upsert_points_blocking(self.collection_name.clone(), points, None)
             .await?;
         Ok(())
     }
 
-    pub(crate) async fn search(&self, embedding: Vec<f32>, limit: u64) -> Result<Vec<(i32, f32)>> {
+    pub(crate) async fn search_similar(&self, embedding: Vec<f32>, limit: u64) -> Result<Vec<(i32, f32)>> {
         let points = self
             .client
             .search_points(&SearchPoints {
