@@ -76,12 +76,12 @@ async fn initialize() -> Result<AppState> {
 #[derive(Deserialize)]
 struct SearchSimilarItemsRequest {
     sentence: String,
-    limit: u64,
+    limit: usize,
 }
 
 #[derive(Serialize)]
 struct SearchSimilarItemsResponse {
-    items: Vec<(i32, f32, Option<String>, Option<String>)>,
+    items: Vec<(i32, f32, Option<String>, Option<String>, Option<i64>)>,
 }
 
 async fn search_similar_items(
@@ -89,18 +89,19 @@ async fn search_similar_items(
     Json(payload): Json<SearchSimilarItemsRequest>,
 ) -> Result<Json<SearchSimilarItemsResponse>, AppError> {
     let embedding = inference::embed(&payload.sentence).await?;
-    let points = search_engine::search_similar(payload.sentence, embedding, payload.limit).await?;
-    let ids = points.iter().map(|(id, _score)| *id).collect::<Vec<i32>>();
+    let similar_items = search_engine::search_similar(payload.sentence, embedding, payload.limit).await?;
+    let ids = similar_items.iter().map(|(id, _)| *id).collect::<Vec<i32>>();
     let mut items_map = match state.repo.find_items(&ids) {
         Ok(items_map) => items_map,
         Err(_) => return Ok(Json(SearchSimilarItemsResponse { items: vec![] })),
     };
     let mut items = vec![];
-    for (id, score) in points {
-        if let Some((title, url)) = items_map.remove(&id) {
-            items.push((id, score, title, url))
+    for (id, score) in similar_items {
+        if let Some((title, url, time)) = items_map.remove(&id) {
+            items.push((id, score, title, url, time))
         }
     }
+    items.sort_by(|(_, _, _, _, time1), (_, _, _, _, time2)| time1.cmp(time2).reverse());
     let response = SearchSimilarItemsResponse { items };
     Ok(Json(response))
 }

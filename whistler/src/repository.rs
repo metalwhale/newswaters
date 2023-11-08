@@ -26,16 +26,19 @@ impl Repository {
         return Ok(Self { pool });
     }
 
-    pub(crate) fn find_items(&self, ids: &[i32]) -> Result<HashMap<i32, (Option<String>, Option<String>)>> {
+    pub(crate) fn find_items(
+        &self,
+        ids: &[i32],
+    ) -> Result<HashMap<i32, (Option<String>, Option<String>, Option<i64>)>> {
         let items_map = diesel::sql_query(format!(
-            "SELECT id, title, url \
+            "SELECT id, title, url, time \
             FROM unnest(ARRAY[{}]) AS s(i) \
             JOIN items ON s.i = items.id",
             ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", ")
         ))
         .get_results::<ItemRecord>(&mut self.pool.get()?)?
         .into_iter()
-        .map(|r| (r.id, (r.title, r.url)))
+        .map(|r| (r.id, (r.title, r.url, r.time)))
         .collect();
         Ok(items_map)
     }
@@ -49,4 +52,6 @@ struct ItemRecord {
     title: Option<String>,
     #[diesel(sql_type = Nullable<Text>)]
     url: Option<String>,
+    #[diesel(sql_type = Nullable<Int8>)]
+    time: Option<i64>,
 }
