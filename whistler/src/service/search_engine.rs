@@ -48,7 +48,9 @@ pub(crate) async fn search_similar(sentence: String, embedding: Vec<f32>, limit:
         let (_, lexical_max_score) = lexical_results.first().context("Lexical max score")?.to_owned();
         let (_, lexical_min_score) = lexical_results.last().context("Lexical min score")?.to_owned();
         for (id, score) in &lexical_results {
-            let weighted_score = if lexical_results.len() > 1 {
+            let weighted_score = if lexical_weight == 1.0 {
+                *score
+            } else if lexical_results.len() > 1 {
                 lexical_weight * (score - lexical_min_score) / (lexical_max_score - lexical_min_score)
             } else {
                 lexical_weight
@@ -62,7 +64,9 @@ pub(crate) async fn search_similar(sentence: String, embedding: Vec<f32>, limit:
         let (_, semantic_max_score) = semantic_results.first().context("Semantic max score")?.to_owned();
         let (_, semantic_min_score) = semantic_results.last().context("Semantic min score")?.to_owned();
         for (id, score) in &semantic_results {
-            let weighted_semantic_score = if semantic_results.len() > 1 {
+            let weighted_semantic_score = if semantic_weight == 1.0 {
+                *score
+            } else if semantic_results.len() > 1 {
                 semantic_weight * (score - semantic_min_score) / (semantic_max_score - semantic_min_score)
             } else {
                 semantic_weight
