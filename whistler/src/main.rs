@@ -101,7 +101,6 @@ async fn search_similar_items(
             items.push((id, score, title, url, time))
         }
     }
-    items.sort_by(|(_, _, _, _, time1), (_, _, _, _, time2)| time1.cmp(time2).reverse());
     let response = SearchSimilarItemsResponse { items };
     Ok(Json(response))
 }
