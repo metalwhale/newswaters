@@ -16,7 +16,5 @@ FROM debian:trixie-slim
 RUN apt update -y && \
     apt install -y ca-certificates
 
-RUN mkdir -p /usr/src/models/
-
 COPY --from=previous /bin/llama /bin/llama
 COPY --from=build /usr/src/echolocator/target/release/echolocator /bin/echolocator
