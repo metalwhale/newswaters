@@ -29,7 +29,7 @@ impl VectorRepository {
                     collection_name: collection_name.clone(),
                     vectors_config: Some(VectorsConfig {
                         config: Some(Config::Params(VectorParams {
-                            size: env::var("SEARCH_ENGINE_VECTOR_SIZE")?.parse()?,
+                            size: 768, // See: https://huggingface.co/jinaai/jina-embeddings-v2-base-en/blob/d411fe9/config.json#L18
                             distance: Distance::Cosine.into(),
                             ..Default::default()
                         })),

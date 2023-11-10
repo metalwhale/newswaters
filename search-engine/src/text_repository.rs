@@ -20,7 +20,7 @@ impl TextRepository {
     pub(crate) fn new() -> Result<Self> {
         let mut schema_builder = Schema::builder();
         let id = schema_builder.add_u64_field("id", FAST | STORED);
-        let sentence = schema_builder.add_text_field("sentence", TEXT | STORED);
+        let sentence = schema_builder.add_text_field("sentence", TEXT);
         let schema = schema_builder.build();
         let storage_path = env::var("SEARCH_ENGINE_TEXT_STORAGE_PATH")?;
         std::fs::create_dir_all(&storage_path)?;
@@ -28,6 +28,7 @@ impl TextRepository {
         Ok(Self { id, sentence, index })
     }
 
+    #[allow(dead_code)]
     pub(crate) fn add(&self, id: i32, sentence: String) -> Result<()> {
         let mut index_writer = self.index.writer(100_000_000)?;
         index_writer.add_document(doc!(

@@ -20,4 +20,4 @@ jobs:
           context: "{{defaultContext}}:search-engine"
           file: Dockerfile.deployment
           push: true
-          tags: metalwhaledev/newswaters-search-engine:0.2.0
+          tags: metalwhaledev/newswaters-search-engine:0.2.1
