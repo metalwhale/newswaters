@@ -29,8 +29,8 @@ impl VectorRepository {
                     collection_name: collection_name.clone(),
                     vectors_config: Some(VectorsConfig {
                         config: Some(Config::Params(VectorParams {
-                            size: env::var("SEARCH_ENGINE_VECTOR_SIZE")?.parse()?,
-                            distance: Distance::Cosine.into(),
+                            size: 768, // See: https://huggingface.co/BAAI/llm-embedder/blob/01fe9c0/1_Pooling/config.json#L2
+                            distance: Distance::Dot.into(),
                             ..Default::default()
                         })),
                     }),

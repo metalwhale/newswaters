@@ -1,7 +1,7 @@
 mod bert;
 mod llama;
 
-use std::env;
+use std::{env, sync::Arc};
 
 use anyhow::{Error, Result};
 use axum::{
@@ -11,6 +11,7 @@ use axum::{
 };
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
+use tokio::sync::Mutex;
 
 use crate::bert::Bert;
 use crate::llama::Llama;
@@ -18,7 +19,7 @@ use crate::llama::Llama;
 #[derive(Clone)]
 struct AppState {
     llama: Llama,
-    bert: Bert,
+    bert: Arc<Mutex<Bert>>,
 }
 
 // See: https://github.com/tokio-rs/axum/blob/c979672/examples/anyhow-error-response/src/main.rs#L34-L57
@@ -60,7 +61,7 @@ async fn main() -> Result<()> {
 
 async fn initialize() -> Result<AppState> {
     let llama = Llama::new().await?;
-    let bert = Bert::new()?;
+    let bert = Arc::new(Mutex::new(Bert::new()?));
     let state = AppState { llama, bert };
     Ok(state)
 }
@@ -95,10 +96,10 @@ struct EmbedResponse {
 }
 
 async fn embed(
-    State(mut state): State<AppState>,
+    State(state): State<AppState>,
     Json(payload): Json<EmbedRequest>,
 ) -> Result<Json<EmbedResponse>, AppError> {
-    let embedding = state.bert.embed(&payload.sentence)?;
+    let embedding = state.bert.lock().await.embed(&payload.sentence)?;
     let response = EmbedResponse { embedding };
     Ok(Json(response))
 }

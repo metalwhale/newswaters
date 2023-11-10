@@ -226,7 +226,7 @@ checksum = "a2bd12c1caf447e69cd4528f47f94d203fd2582878ecb9e9465484c4148a8223"
 [[package]]
 name = "candle-core"
 version = "0.3.0"
-source = "git+https://github.com/huggingface/candle.git?rev=0ec5ebc#0ec5ebcec429fe2bb85a6a7f780509bb1831b024"
+source = "git+https://github.com/huggingface/candle.git?rev=8a82d62#8a82d623e5ad919ba422bc796bd31b6fc3b91ab1"
 dependencies = [
  "byteorder",
  "gemm",
@@ -246,7 +246,7 @@ dependencies = [
 [[package]]
 name = "candle-nn"
 version = "0.3.0"
-source = "git+https://github.com/huggingface/candle.git?rev=0ec5ebc#0ec5ebcec429fe2bb85a6a7f780509bb1831b024"
+source = "git+https://github.com/huggingface/candle.git?rev=8a82d62#8a82d623e5ad919ba422bc796bd31b6fc3b91ab1"
 dependencies = [
  "candle-core",
  "half",
@@ -260,7 +260,7 @@ dependencies = [
 [[package]]
 name = "candle-transformers"
 version = "0.3.0"
-source = "git+https://github.com/huggingface/candle.git?rev=0ec5ebc#0ec5ebcec429fe2bb85a6a7f780509bb1831b024"
+source = "git+https://github.com/huggingface/candle.git?rev=8a82d62#8a82d623e5ad919ba422bc796bd31b6fc3b91ab1"
 dependencies = [
  "candle-core",
  "candle-nn",
@@ -510,7 +510,7 @@ dependencies = [
 
 [[package]]
 name = "echolocator"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "anyhow",
  "axum",
@@ -521,6 +521,7 @@ dependencies = [
  "hf-hub",
  "reqwest",
  "serde",
+ "serde_json",
  "tokenizers",
  "tokio",
 ]

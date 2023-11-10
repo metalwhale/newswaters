@@ -51,7 +51,8 @@ struct EmbedResponse {
 
 pub(crate) async fn embed(sentence: &str) -> Result<Vec<f32>> {
     let mut payload = HashMap::new();
-    payload.insert("sentence", sentence);
+    // See: https://github.com/FlagOpen/FlagEmbedding/tree/b755dff/FlagEmbedding/llm_embedder#using-transformers
+    payload.insert("sentence", format!("Represent this document for retrieval: {sentence}"));
     let client = reqwest::Client::new();
     let endpoint = format!(
         "http://{}:{}/embed",
