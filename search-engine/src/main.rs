@@ -91,6 +91,7 @@ async fn find_missing(
 #[derive(Deserialize)]
 struct UpsertRequest {
     id: i32,
+    #[allow(dead_code)]
     sentence: String,
     embedding: Vec<f32>,
 }
@@ -103,7 +104,7 @@ async fn upsert(
     Json(payload): Json<UpsertRequest>,
 ) -> Result<Json<UpsertResponse>, AppError> {
     state.vector_repo.upsert(payload.id, payload.embedding).await?;
-    state.text_repo.add(payload.id, payload.sentence)?;
+    // state.text_repo.add(payload.id, payload.sentence)?; // NOTE: Temporarily disable text indexing
     let response = UpsertResponse {};
     Ok(Json(response))
 }

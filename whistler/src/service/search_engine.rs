@@ -15,15 +15,26 @@ struct SearchSimilarResponse {
     items: Vec<(i32, f32)>,
 }
 
+#[allow(dead_code)]
 enum LeafQuery {
     Lexical(String),
     Semantic(Vec<f32>),
 }
 
+pub(crate) async fn search_similar(embedding: Vec<f32>, limit: u64) -> Result<Vec<(i32, f32)>> {
+    let results = search_similar_leaf(LeafQuery::Semantic(embedding), limit).await?;
+    return Ok(results);
+}
+
 // See:
 // - https://opster.com/guides/opensearch/opensearch-machine-learning/opensearch-hybrid-search/
 // - https://opensearch.org/blog/semantic-science-benchmarks/
-pub(crate) async fn search_similar(sentence: String, embedding: Vec<f32>, limit: usize) -> Result<Vec<(i32, f32)>> {
+#[allow(dead_code)]
+pub(crate) async fn search_similar_compound(
+    sentence: String,
+    embedding: Vec<f32>,
+    limit: usize,
+) -> Result<Vec<(i32, f32)>> {
     // Obtain the results from each individual leaf query
     let lexical_results = search_similar_leaf(
         LeafQuery::Lexical(sentence),
