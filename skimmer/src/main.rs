@@ -103,16 +103,16 @@ async fn consume_texts(mut repo: Repository, is_job: bool) -> Result<()> {
         .parse()?;
     loop {
         let top_story_ids = hacker_news::get_top_story_ids().await?;
-        let mut item_urls = repo.find_summary_missing_item_urls(&top_story_ids)?;
+        let mut items = repo.find_summary_missing_items(&top_story_ids)?;
         // NOTE: We must use `truncate` function here instead of `LIMIT` in the query,
         //   as `LIMIT` doesn't maintain the order of top stories' ids.
-        item_urls.truncate(texts_num);
-        if item_urls.len() < texts_num {
-            let mut additional_item_urls =
-                repo.find_summary_missing_item_urls_excluding(&top_story_ids, texts_num - item_urls.len())?;
-            item_urls.append(&mut additional_item_urls);
+        items.truncate(texts_num);
+        if items.len() < texts_num {
+            let mut additional_items =
+                repo.find_summary_missing_items_excluding(&top_story_ids, texts_num - items.len())?;
+            items.append(&mut additional_items);
         }
-        for (id, title, text) in item_urls {
+        for (id, title, text) in items {
             let shortened_text = shorten_text(&text, text_min_line_length, text_max_total_length);
             let start_time = std::time::Instant::now();
             let summary = match inference::instruct_summary(&title, &shortened_text).await {
@@ -145,7 +145,7 @@ async fn consume_summaries(mut repo: Repository, is_job: bool) -> Result<()> {
         .parse()?;
     let chunk_size: usize = env::var("SKIMMER_CHUNK_SIZE").unwrap_or("50".to_string()).parse()?;
     loop {
-        let summary_existing_ids = repo.find_summary_existing_item_urls(summaries_num)?;
+        let summary_existing_ids = repo.find_summary_existing_items(summaries_num)?;
         let embedding_missing_ids = search_engine::find_missing(summary_existing_ids).await?;
         for chunk in embedding_missing_ids.chunks(chunk_size) {
             let item_summaries = repo.find_item_summaries(chunk)?;

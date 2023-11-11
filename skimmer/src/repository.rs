@@ -82,7 +82,7 @@ impl Repository {
         return Ok(missing_item_urls);
     }
 
-    pub(crate) fn find_summary_missing_item_urls(&mut self, ids: &[i32]) -> Result<Vec<(i32, String, String)>> {
+    pub(crate) fn find_summary_missing_items(&mut self, ids: &[i32]) -> Result<Vec<(i32, String, String)>> {
         let summary_missing_item_urls = diesel::sql_query(format!(
             "SELECT item_id AS id, title, item_urls.text \
             FROM unnest(ARRAY[{}]) AS s(i) \
@@ -91,14 +91,14 @@ impl Repository {
             WHERE item_urls.text IS NOT NULL AND summary IS NULL",
             ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", ")
         ))
-        .get_results::<SummaryMissingItemUrlRecord>(&mut self.connection)?
+        .get_results::<SummaryMissingItemRecord>(&mut self.connection)?
         .into_iter()
         .map(|r| (r.id, r.title, r.text))
         .collect();
         return Ok(summary_missing_item_urls);
     }
 
-    pub(crate) fn find_summary_missing_item_urls_excluding(
+    pub(crate) fn find_summary_missing_items_excluding(
         &mut self,
         ids: &[i32],
         limit: usize,
@@ -112,24 +112,25 @@ impl Repository {
             ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", "),
             limit
         ))
-        .get_results::<SummaryMissingItemUrlRecord>(&mut self.connection)?
+        .get_results::<SummaryMissingItemRecord>(&mut self.connection)?
         .into_iter()
         .map(|r| (r.id, r.title, r.text))
         .collect();
         return Ok(summary_missing_item_urls);
     }
 
-    pub(crate) fn find_summary_existing_item_urls(&mut self, limit: usize) -> Result<Vec<i32>> {
+    pub(crate) fn find_summary_existing_items(&mut self, limit: usize) -> Result<Vec<i32>> {
         let summary_missing_item_urls = diesel::sql_query(format!(
-            "SELECT item_id \
-            FROM item_urls \
-            WHERE item_urls.text IS NOT NULL AND summary IS NULL \
-            ORDER BY item_id DESC LIMIT {}",
+            "SELECT id \
+            FROM items \
+            JOIN item_urls ON items.id = item_urls.item_id \
+            WHERE items.text IS NOT NULL OR summary IS NOT NULL \
+            ORDER BY id DESC LIMIT {}",
             limit
         ))
-        .get_results::<SummaryExistingItemUrlRecord>(&mut self.connection)?
+        .get_results::<SummaryExistingItemRecord>(&mut self.connection)?
         .into_iter()
-        .map(|r| (r.item_id))
+        .map(|r| (r.id))
         .collect();
         return Ok(summary_missing_item_urls);
     }
@@ -288,7 +289,7 @@ struct MissingItemUrlRecord {
 }
 
 #[derive(QueryableByName)]
-struct SummaryMissingItemUrlRecord {
+struct SummaryMissingItemRecord {
     #[diesel(sql_type = Integer)]
     id: i32,
     #[diesel(sql_type = Text)]
@@ -298,9 +299,9 @@ struct SummaryMissingItemUrlRecord {
 }
 
 #[derive(QueryableByName)]
-struct SummaryExistingItemUrlRecord {
+struct SummaryExistingItemRecord {
     #[diesel(sql_type = Integer)]
-    item_id: i32,
+    id: i32,
 }
 
 #[derive(QueryableByName)]
