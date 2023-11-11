@@ -105,10 +105,15 @@ async fn consume_top_stories(mut repo: Repository, is_job: bool) -> Result<()> {
         .parse()?;
     loop {
         let top_story_ids = hacker_news::get_top_story_ids().await?;
-        let mut item_urls = repo.find_summary_missing_item_urls(top_story_ids)?;
+        let mut item_urls = repo.find_summary_missing_item_urls(&top_story_ids)?;
         // NOTE: We must use `truncate` function here instead of `LIMIT` in the query,
         //   as `LIMIT` doesn't maintain the order of top stories' ids.
         item_urls.truncate(top_stories_num);
+        if item_urls.len() < top_stories_num {
+            let mut additional_item_urls =
+                repo.find_summary_missing_item_urls_excluding(&top_story_ids, top_stories_num - item_urls.len())?;
+            item_urls.append(&mut additional_item_urls);
+        }
         for (id, title, text) in item_urls {
             let shortened_text = shorten_text(&text, text_min_line_length, text_max_total_length);
             let start_time = std::time::Instant::now();
@@ -143,7 +148,7 @@ async fn consume_top_story_summaries(mut repo: Repository, is_job: bool) -> Resu
     loop {
         let top_story_ids = hacker_news::get_top_story_ids().await?;
         let missing_ids = search_engine::find_missing(top_story_ids).await?;
-        let mut item_summaries = repo.find_item_summaries(missing_ids)?;
+        let mut item_summaries = repo.find_item_summaries(&missing_ids)?;
         item_summaries.truncate(top_story_summaries_num);
         for (id, text, summary) in item_summaries {
             let sentence = if let Some(text) = text {
