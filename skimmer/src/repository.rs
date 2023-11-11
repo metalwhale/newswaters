@@ -119,6 +119,21 @@ impl Repository {
         return Ok(summary_missing_item_urls);
     }
 
+    pub(crate) fn find_summary_existing_item_urls(&mut self, limit: usize) -> Result<Vec<i32>> {
+        let summary_missing_item_urls = diesel::sql_query(format!(
+            "SELECT item_id \
+            FROM item_urls \
+            WHERE item_urls.text IS NOT NULL AND summary IS NULL \
+            ORDER BY item_id DESC LIMIT {}",
+            limit
+        ))
+        .get_results::<SummaryExistingItemUrlRecord>(&mut self.connection)?
+        .into_iter()
+        .map(|r| (r.item_id))
+        .collect();
+        return Ok(summary_missing_item_urls);
+    }
+
     pub(crate) fn find_item_summaries(&mut self, ids: &[i32]) -> Result<Vec<(i32, Option<String>, Option<String>)>> {
         let item_summaries = diesel::sql_query(format!(
             "SELECT id, items.text, summary \
@@ -252,6 +267,52 @@ impl FromSql<ItemType, Pg> for ItemTypeValue {
     }
 }
 
+#[derive(QueryableByName)]
+struct ItemIdRecord {
+    #[diesel(sql_type = Integer)]
+    id: i32,
+}
+
+#[derive(QueryableByName)]
+struct MissingItemRecord {
+    #[diesel(sql_type = Integer)]
+    id: i32,
+}
+
+#[derive(QueryableByName)]
+struct MissingItemUrlRecord {
+    #[diesel(sql_type = Integer)]
+    id: i32,
+    #[diesel(sql_type = Text)]
+    url: String,
+}
+
+#[derive(QueryableByName)]
+struct SummaryMissingItemUrlRecord {
+    #[diesel(sql_type = Integer)]
+    id: i32,
+    #[diesel(sql_type = Text)]
+    title: String,
+    #[diesel(sql_type = Text)]
+    text: String,
+}
+
+#[derive(QueryableByName)]
+struct SummaryExistingItemUrlRecord {
+    #[diesel(sql_type = Integer)]
+    item_id: i32,
+}
+
+#[derive(QueryableByName)]
+struct ItemSummaryRecord {
+    #[diesel(sql_type = Integer)]
+    id: i32,
+    #[diesel(sql_type = Nullable<Text>)]
+    text: Option<String>,
+    #[diesel(sql_type = Nullable<Text>)]
+    summary: Option<String>,
+}
+
 #[derive(Queryable, Selectable, Insertable)]
 #[diesel(table_name = items)]
 #[diesel(check_for_backend(Pg))]
@@ -287,50 +348,10 @@ struct InsertItemUrlRecord {
     updated_at: DateTime<Local>,
 }
 
-#[derive(QueryableByName)]
-struct ItemIdRecord {
-    #[diesel(sql_type = Integer)]
-    id: i32,
-}
-
-#[derive(QueryableByName)]
-struct MissingItemRecord {
-    #[diesel(sql_type = Integer)]
-    id: i32,
-}
-
-#[derive(QueryableByName)]
-struct MissingItemUrlRecord {
-    #[diesel(sql_type = Integer)]
-    id: i32,
-    #[diesel(sql_type = Text)]
-    url: String,
-}
-
-#[derive(QueryableByName)]
-struct SummaryMissingItemUrlRecord {
-    #[diesel(sql_type = Integer)]
-    id: i32,
-    #[diesel(sql_type = Text)]
-    title: String,
-    #[diesel(sql_type = Text)]
-    text: String,
-}
-
 #[derive(AsChangeset)]
 #[diesel(table_name = item_urls)]
 #[diesel(check_for_backend(Pg))]
 struct UpdateItemUrlRecord {
     summary: Option<String>,
     updated_at: DateTime<Local>,
-}
-
-#[derive(QueryableByName)]
-struct ItemSummaryRecord {
-    #[diesel(sql_type = Integer)]
-    id: i32,
-    #[diesel(sql_type = Nullable<Text>)]
-    text: Option<String>,
-    #[diesel(sql_type = Nullable<Text>)]
-    summary: Option<String>,
 }
