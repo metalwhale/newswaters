@@ -36,16 +36,16 @@ async fn main() -> Result<()> {
 async fn collect_items(repo: Arc<Mutex<Repository>>, is_job: bool) -> Result<()> {
     let items_num: i32 = env::var("SKIMMER_ITEMS_NUM").unwrap_or("1000000".to_string()).parse()?;
     let permits_num: usize = env::var("SKIMMER_PERMITS_NUM").unwrap_or("100".to_string()).parse()?;
-    let batch_size: i32 = env::var("SKIMMER_BATCH_SIZE").unwrap_or("1000".to_string()).parse()?;
+    let chunk_size: i32 = env::var("SKIMMER_CHUNK_SIZE").unwrap_or("1000".to_string()).parse()?;
     loop {
         let max_id = hacker_news::get_max_item_id().await?;
         let min_id = std::cmp::max(0, max_id - (items_num - 1));
         // Iterate in reverse order
-        let mut batch_max_id = max_id;
-        while batch_max_id >= min_id {
-            let batch_min_id = std::cmp::max(min_id, batch_max_id - batch_size + 1);
-            collect_batch_items(Arc::clone(&repo), permits_num, batch_min_id, batch_max_id).await?;
-            batch_max_id -= batch_size;
+        let mut chunk_max_id = max_id;
+        while chunk_max_id >= min_id {
+            let chunk_min_id = std::cmp::max(min_id, chunk_max_id - chunk_size + 1);
+            collect_chunk_items(Arc::clone(&repo), permits_num, chunk_min_id, chunk_max_id).await?;
+            chunk_max_id -= chunk_size;
         }
         if is_job {
             break Ok(());
@@ -60,7 +60,7 @@ async fn collect_item_urls(repo: Arc<Mutex<Repository>>, is_job: bool) -> Result
         .unwrap_or("1000000".to_string())
         .parse()?;
     let permits_num: usize = env::var("SKIMMER_PERMITS_NUM").unwrap_or("10".to_string()).parse()?;
-    let batch_size: i32 = env::var("SKIMMER_BATCH_SIZE").unwrap_or("1000".to_string()).parse()?;
+    let chunk_size: i32 = env::var("SKIMMER_CHUNK_SIZE").unwrap_or("1000".to_string()).parse()?;
     let replicas_num: i32 = env::var("SKIMMER_REPLICAS_NUM").unwrap_or("1".to_string()).parse()?;
     let replica_index: i32 = env::var("SKIMMER_REPLICA_INDEX").unwrap_or("0".to_string()).parse()?;
     loop {
@@ -71,19 +71,19 @@ async fn collect_item_urls(repo: Arc<Mutex<Repository>>, is_job: bool) -> Result
             repo.lock().await.deref_mut().find_min_item_id()?,
         );
         // Iterate in reverse order
-        let mut batch_max_id = max_id;
-        while batch_max_id >= min_id {
-            let batch_min_id = std::cmp::max(min_id, batch_max_id - batch_size + 1);
-            collect_batch_item_urls(
+        let mut chunk_max_id = max_id;
+        while chunk_max_id >= min_id {
+            let chunk_min_id = std::cmp::max(min_id, chunk_max_id - chunk_size + 1);
+            collect_chunk_item_urls(
                 Arc::clone(&repo),
                 permits_num,
-                batch_min_id,
-                batch_max_id,
+                chunk_min_id,
+                chunk_max_id,
                 replicas_num,
                 replica_index,
             )
             .await?;
-            batch_max_id -= batch_size;
+            chunk_max_id -= chunk_size;
         }
         if is_job {
             break Ok(());
@@ -143,11 +143,11 @@ async fn consume_summaries(mut repo: Repository, is_job: bool) -> Result<()> {
     let summaries_num: usize = env::var("SKIMMER_SUMMARIES_NUM")
         .unwrap_or("1000000".to_string())
         .parse()?;
-    let batch_size: usize = env::var("SKIMMER_BATCH_SIZE").unwrap_or("50".to_string()).parse()?;
+    let chunk_size: usize = env::var("SKIMMER_CHUNK_SIZE").unwrap_or("50".to_string()).parse()?;
     loop {
         let summary_existing_ids = repo.find_summary_existing_item_urls(summaries_num)?;
         let embedding_missing_ids = search_engine::find_missing(summary_existing_ids).await?;
-        for chunk in embedding_missing_ids.chunks(batch_size) {
+        for chunk in embedding_missing_ids.chunks(chunk_size) {
             let item_summaries = repo.find_item_summaries(chunk)?;
             for (id, text, summary) in item_summaries {
                 let sentence = if let Some(text) = text {
@@ -170,11 +170,11 @@ async fn consume_summaries(mut repo: Repository, is_job: bool) -> Result<()> {
     }
 }
 
-async fn collect_batch_items(
+async fn collect_chunk_items(
     repo: Arc<Mutex<Repository>>,
     permits_num: usize,
-    batch_min_id: i32,
-    batch_max_id: i32,
+    chunk_min_id: i32,
+    chunk_max_id: i32,
 ) -> Result<()> {
     let semaphore = Arc::new(Semaphore::new(permits_num));
     let mut handles = HashMap::new();
@@ -182,7 +182,7 @@ async fn collect_batch_items(
         .lock()
         .await
         .deref_mut()
-        .find_missing_items(batch_min_id, batch_max_id)?;
+        .find_missing_items(chunk_min_id, chunk_max_id)?;
     // Iterate in reverse order
     for id in item_ids.into_iter().rev() {
         let permit = semaphore.clone().acquire_owned().await?;
@@ -215,17 +215,17 @@ async fn collect_batch_items(
     for (id, handle) in handles {
         match handle.await? {
             Ok(_) => {}
-            Err(e) => println!("[ERR] main.collect_batch_items.handle (id={id}): err={e}"),
+            Err(e) => println!("[ERR] main.collect_chunk_items.handle (id={id}): err={e}"),
         };
     }
     Ok(())
 }
 
-async fn collect_batch_item_urls(
+async fn collect_chunk_item_urls(
     repo: Arc<Mutex<Repository>>,
     permits_num: usize,
-    batch_min_id: i32,
-    batch_max_id: i32,
+    chunk_min_id: i32,
+    chunk_max_id: i32,
     replicas_num: i32,
     replica_index: i32,
 ) -> Result<()> {
@@ -235,7 +235,7 @@ async fn collect_batch_item_urls(
         .lock()
         .await
         .deref_mut()
-        .find_missing_item_urls(batch_min_id, batch_max_id)?;
+        .find_missing_item_urls(chunk_min_id, chunk_max_id)?;
     // Iterate in reverse order
     for (id, url) in item_urls.into_iter().rev() {
         if id % replicas_num != replica_index {
@@ -259,7 +259,7 @@ async fn collect_batch_item_urls(
     for (id, handle) in handles {
         match handle.await? {
             Ok(_) => {}
-            Err(e) => println!("[ERR] main.collect_batch_item_urls.handle (id={id}): err={e}"),
+            Err(e) => println!("[ERR] main.collect_chunk_item_urls.handle (id={id}): err={e}"),
         };
     }
     Ok(())
