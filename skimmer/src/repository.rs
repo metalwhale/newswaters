@@ -82,7 +82,7 @@ impl Repository {
         return Ok(missing_item_urls);
     }
 
-    pub(crate) fn find_summary_missing_item_urls(&mut self, ids: Vec<i32>) -> Result<Vec<(i32, String, String)>> {
+    pub(crate) fn find_summary_missing_item_urls(&mut self, ids: &[i32]) -> Result<Vec<(i32, String, String)>> {
         let summary_missing_item_urls = diesel::sql_query(format!(
             "SELECT item_id AS id, title, item_urls.text \
             FROM unnest(ARRAY[{}]) AS s(i) \
@@ -98,7 +98,28 @@ impl Repository {
         return Ok(summary_missing_item_urls);
     }
 
-    pub(crate) fn find_item_summaries(&mut self, ids: Vec<i32>) -> Result<Vec<(i32, Option<String>, Option<String>)>> {
+    pub(crate) fn find_summary_missing_item_urls_excluding(
+        &mut self,
+        ids: &[i32],
+        limit: usize,
+    ) -> Result<Vec<(i32, String, String)>> {
+        let summary_missing_item_urls = diesel::sql_query(format!(
+            "SELECT item_id AS id, title, item_urls.text \
+            FROM items \
+            JOIN item_urls ON items.id = item_urls.item_id \
+            WHERE item_urls.text IS NOT NULL AND summary IS NULL AND id NOT IN ({}) \
+            ORDER BY id DESC LIMIT {}",
+            ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", "),
+            limit
+        ))
+        .get_results::<SummaryMissingItemUrlRecord>(&mut self.connection)?
+        .into_iter()
+        .map(|r| (r.id, r.title, r.text))
+        .collect();
+        return Ok(summary_missing_item_urls);
+    }
+
+    pub(crate) fn find_item_summaries(&mut self, ids: &[i32]) -> Result<Vec<(i32, Option<String>, Option<String>)>> {
         let item_summaries = diesel::sql_query(format!(
             "SELECT id, items.text, summary \
             FROM unnest(ARRAY[{}]) AS s(i) \
@@ -115,7 +136,7 @@ impl Repository {
     }
 
     pub(crate) fn insert_item(&mut self, item: Item) -> Result<()> {
-        let item_record = ItemRecord {
+        let item_record = InsertItemRecord {
             id: item.id,
             deleted: item.deleted,
             type_: Some(item.type_.context(format!("item.id={}", item.id))?.try_into()?),
@@ -134,13 +155,13 @@ impl Repository {
         };
         diesel::insert_into(items::table)
             .values(&item_record)
-            .returning(ItemRecord::as_returning())
+            .returning(InsertItemRecord::as_returning())
             .get_result(&mut self.connection)?;
         Ok(())
     }
 
     pub(crate) fn insert_item_url(&mut self, item_id: i32, item_url: ItemUrl) -> Result<()> {
-        let mut item_url_record = ItemUrlRecord {
+        let mut item_url_record = InsertItemUrlRecord {
             item_id,
             html: None,
             text: None,
@@ -168,7 +189,7 @@ impl Repository {
         }
         diesel::insert_into(item_urls::table)
             .values(&item_url_record)
-            .returning(ItemUrlRecord::as_returning())
+            .returning(InsertItemUrlRecord::as_returning())
             .get_result(&mut self.connection)?;
         Ok(())
     }
@@ -234,7 +255,7 @@ impl FromSql<ItemType, Pg> for ItemTypeValue {
 #[derive(Queryable, Selectable, Insertable)]
 #[diesel(table_name = items)]
 #[diesel(check_for_backend(Pg))]
-struct ItemRecord {
+struct InsertItemRecord {
     id: i32,
     deleted: Option<bool>,
     type_: Option<ItemTypeValue>,
@@ -255,7 +276,7 @@ struct ItemRecord {
 #[derive(Queryable, Selectable, Insertable)]
 #[diesel(table_name = item_urls)]
 #[diesel(check_for_backend(Pg))]
-struct ItemUrlRecord {
+struct InsertItemUrlRecord {
     item_id: i32,
     html: Option<String>,
     text: Option<String>,
