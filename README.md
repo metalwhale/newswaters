@@ -68,13 +68,13 @@ Whales feed by skimming.
     ```bash
     SKIMMER_IS_JOB=true cargo run -- collect_item_urls
     ```
-4. Consume top stories:
+4. Consume texts:
     ```bash
-    SKIMMER_IS_JOB=true cargo run -- consume_top_stories
+    SKIMMER_IS_JOB=true cargo run -- consume_texts
     ```
-    Or top story summaries:
+    Or summaries:
     ```bash
-    SKIMMER_IS_JOB=true cargo run -- consume_top_story_summaries
+    SKIMMER_IS_JOB=true cargo run -- consume_summaries
     ```
 
 ### Run the whistler

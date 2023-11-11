@@ -25,8 +25,8 @@ async fn main() -> Result<()> {
         match args[1].as_str() {
             "collect_items" => collect_items(Arc::new(Mutex::new(repo)), is_job).await?,
             "collect_item_urls" => collect_item_urls(Arc::new(Mutex::new(repo)), is_job).await?,
-            "consume_top_stories" => consume_top_stories(repo, is_job).await?,
-            "consume_top_story_summaries" => consume_top_story_summaries(repo, is_job).await?,
+            "consume_texts" => consume_texts(repo, is_job).await?,
+            "consume_summaries" => consume_summaries(repo, is_job).await?,
             _ => {}
         }
     }
@@ -36,16 +36,16 @@ async fn main() -> Result<()> {
 async fn collect_items(repo: Arc<Mutex<Repository>>, is_job: bool) -> Result<()> {
     let items_num: i32 = env::var("SKIMMER_ITEMS_NUM").unwrap_or("1000000".to_string()).parse()?;
     let permits_num: usize = env::var("SKIMMER_PERMITS_NUM").unwrap_or("100".to_string()).parse()?;
-    let batch_size: i32 = env::var("SKIMMER_BATCH_SIZE").unwrap_or("1000".to_string()).parse()?;
+    let chunk_size: i32 = env::var("SKIMMER_CHUNK_SIZE").unwrap_or("1000".to_string()).parse()?;
     loop {
         let max_id = hacker_news::get_max_item_id().await?;
         let min_id = std::cmp::max(0, max_id - (items_num - 1));
         // Iterate in reverse order
-        let mut batch_max_id = max_id;
-        while batch_max_id >= min_id {
-            let batch_min_id = std::cmp::max(min_id, batch_max_id - batch_size + 1);
-            collect_batch_items(Arc::clone(&repo), permits_num, batch_min_id, batch_max_id).await?;
-            batch_max_id -= batch_size;
+        let mut chunk_max_id = max_id;
+        while chunk_max_id >= min_id {
+            let chunk_min_id = std::cmp::max(min_id, chunk_max_id - chunk_size + 1);
+            collect_chunk_items(Arc::clone(&repo), permits_num, chunk_min_id, chunk_max_id).await?;
+            chunk_max_id -= chunk_size;
         }
         if is_job {
             break Ok(());
@@ -60,7 +60,7 @@ async fn collect_item_urls(repo: Arc<Mutex<Repository>>, is_job: bool) -> Result
         .unwrap_or("1000000".to_string())
         .parse()?;
     let permits_num: usize = env::var("SKIMMER_PERMITS_NUM").unwrap_or("10".to_string()).parse()?;
-    let batch_size: i32 = env::var("SKIMMER_BATCH_SIZE").unwrap_or("1000".to_string()).parse()?;
+    let chunk_size: i32 = env::var("SKIMMER_CHUNK_SIZE").unwrap_or("1000".to_string()).parse()?;
     let replicas_num: i32 = env::var("SKIMMER_REPLICAS_NUM").unwrap_or("1".to_string()).parse()?;
     let replica_index: i32 = env::var("SKIMMER_REPLICA_INDEX").unwrap_or("0".to_string()).parse()?;
     loop {
@@ -71,19 +71,19 @@ async fn collect_item_urls(repo: Arc<Mutex<Repository>>, is_job: bool) -> Result
             repo.lock().await.deref_mut().find_min_item_id()?,
         );
         // Iterate in reverse order
-        let mut batch_max_id = max_id;
-        while batch_max_id >= min_id {
-            let batch_min_id = std::cmp::max(min_id, batch_max_id - batch_size + 1);
-            collect_batch_item_urls(
+        let mut chunk_max_id = max_id;
+        while chunk_max_id >= min_id {
+            let chunk_min_id = std::cmp::max(min_id, chunk_max_id - chunk_size + 1);
+            collect_chunk_item_urls(
                 Arc::clone(&repo),
                 permits_num,
-                batch_min_id,
-                batch_max_id,
+                chunk_min_id,
+                chunk_max_id,
                 replicas_num,
                 replica_index,
             )
             .await?;
-            batch_max_id -= batch_size;
+            chunk_max_id -= chunk_size;
         }
         if is_job {
             break Ok(());
@@ -93,10 +93,8 @@ async fn collect_item_urls(repo: Arc<Mutex<Repository>>, is_job: bool) -> Result
     }
 }
 
-async fn consume_top_stories(mut repo: Repository, is_job: bool) -> Result<()> {
-    let top_stories_num: usize = env::var("SKIMMER_TOP_STORIES_NUM")
-        .unwrap_or("30".to_string())
-        .parse()?;
+async fn consume_texts(mut repo: Repository, is_job: bool) -> Result<()> {
+    let texts_num: usize = env::var("SKIMMER_TEXTS_NUM").unwrap_or("30".to_string()).parse()?;
     let text_min_line_length: usize = env::var("SKIMMER_TEXT_MIN_LINE_LENGTH")
         .unwrap_or("80".to_string())
         .parse()?;
@@ -108,10 +106,10 @@ async fn consume_top_stories(mut repo: Repository, is_job: bool) -> Result<()> {
         let mut item_urls = repo.find_summary_missing_item_urls(&top_story_ids)?;
         // NOTE: We must use `truncate` function here instead of `LIMIT` in the query,
         //   as `LIMIT` doesn't maintain the order of top stories' ids.
-        item_urls.truncate(top_stories_num);
-        if item_urls.len() < top_stories_num {
+        item_urls.truncate(texts_num);
+        if item_urls.len() < texts_num {
             let mut additional_item_urls =
-                repo.find_summary_missing_item_urls_excluding(&top_story_ids, top_stories_num - item_urls.len())?;
+                repo.find_summary_missing_item_urls_excluding(&top_story_ids, texts_num - item_urls.len())?;
             item_urls.append(&mut additional_item_urls);
         }
         for (id, title, text) in item_urls {
@@ -125,7 +123,7 @@ async fn consume_top_stories(mut repo: Repository, is_job: bool) -> Result<()> {
                 }
             };
             println!(
-                "[INFO] main.consume_top_stories (id={}): shortened_text.len={}, summary.len={}, elapsed_time={:?}",
+                "[INFO] main.consume_texts (id={}): shortened_text.len={}, summary.len={}, elapsed_time={:?}",
                 id,
                 shortened_text.len(),
                 summary.len(),
@@ -141,26 +139,28 @@ async fn consume_top_stories(mut repo: Repository, is_job: bool) -> Result<()> {
     }
 }
 
-async fn consume_top_story_summaries(mut repo: Repository, is_job: bool) -> Result<()> {
-    let top_story_summaries_num: usize = env::var("SKIMMER_TOP_STORY_SUMMARIES_NUM")
-        .unwrap_or("30".to_string())
+async fn consume_summaries(mut repo: Repository, is_job: bool) -> Result<()> {
+    let summaries_num: usize = env::var("SKIMMER_SUMMARIES_NUM")
+        .unwrap_or("1000000".to_string())
         .parse()?;
+    let chunk_size: usize = env::var("SKIMMER_CHUNK_SIZE").unwrap_or("50".to_string()).parse()?;
     loop {
-        let top_story_ids = hacker_news::get_top_story_ids().await?;
-        let missing_ids = search_engine::find_missing(top_story_ids).await?;
-        let mut item_summaries = repo.find_item_summaries(&missing_ids)?;
-        item_summaries.truncate(top_story_summaries_num);
-        for (id, text, summary) in item_summaries {
-            let sentence = if let Some(text) = text {
-                text
-            } else if let Some(summary) = summary {
-                summary
-            } else {
-                continue;
-            };
-            let embedding = inference::embed(&sentence).await?;
-            search_engine::upsert(id, sentence, embedding).await?;
-            println!("[INFO] main.consume_top_story_summaries (id={})", id);
+        let summary_existing_ids = repo.find_summary_existing_item_urls(summaries_num)?;
+        let embedding_missing_ids = search_engine::find_missing(summary_existing_ids).await?;
+        for chunk in embedding_missing_ids.chunks(chunk_size) {
+            let item_summaries = repo.find_item_summaries(chunk)?;
+            for (id, text, summary) in item_summaries {
+                let sentence = if let Some(text) = text {
+                    text
+                } else if let Some(summary) = summary {
+                    summary
+                } else {
+                    continue;
+                };
+                let embedding = inference::embed(&sentence).await?;
+                search_engine::upsert(id, sentence, embedding).await?;
+                println!("[INFO] main.consume_summaries (id={})", id);
+            }
         }
         if is_job {
             break Ok(());
@@ -170,11 +170,11 @@ async fn consume_top_story_summaries(mut repo: Repository, is_job: bool) -> Resu
     }
 }
 
-async fn collect_batch_items(
+async fn collect_chunk_items(
     repo: Arc<Mutex<Repository>>,
     permits_num: usize,
-    batch_min_id: i32,
-    batch_max_id: i32,
+    chunk_min_id: i32,
+    chunk_max_id: i32,
 ) -> Result<()> {
     let semaphore = Arc::new(Semaphore::new(permits_num));
     let mut handles = HashMap::new();
@@ -182,7 +182,7 @@ async fn collect_batch_items(
         .lock()
         .await
         .deref_mut()
-        .find_missing_items(batch_min_id, batch_max_id)?;
+        .find_missing_items(chunk_min_id, chunk_max_id)?;
     // Iterate in reverse order
     for id in item_ids.into_iter().rev() {
         let permit = semaphore.clone().acquire_owned().await?;
@@ -215,17 +215,17 @@ async fn collect_batch_items(
     for (id, handle) in handles {
         match handle.await? {
             Ok(_) => {}
-            Err(e) => println!("[ERR] main.collect_batch_items.handle (id={id}): err={e}"),
+            Err(e) => println!("[ERR] main.collect_chunk_items.handle (id={id}): err={e}"),
         };
     }
     Ok(())
 }
 
-async fn collect_batch_item_urls(
+async fn collect_chunk_item_urls(
     repo: Arc<Mutex<Repository>>,
     permits_num: usize,
-    batch_min_id: i32,
-    batch_max_id: i32,
+    chunk_min_id: i32,
+    chunk_max_id: i32,
     replicas_num: i32,
     replica_index: i32,
 ) -> Result<()> {
@@ -235,7 +235,7 @@ async fn collect_batch_item_urls(
         .lock()
         .await
         .deref_mut()
-        .find_missing_item_urls(batch_min_id, batch_max_id)?;
+        .find_missing_item_urls(chunk_min_id, chunk_max_id)?;
     // Iterate in reverse order
     for (id, url) in item_urls.into_iter().rev() {
         if id % replicas_num != replica_index {
@@ -259,7 +259,7 @@ async fn collect_batch_item_urls(
     for (id, handle) in handles {
         match handle.await? {
             Ok(_) => {}
-            Err(e) => println!("[ERR] main.collect_batch_item_urls.handle (id={id}): err={e}"),
+            Err(e) => println!("[ERR] main.collect_chunk_item_urls.handle (id={id}): err={e}"),
         };
     }
     Ok(())
