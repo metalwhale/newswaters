@@ -1,7 +1,12 @@
-use std::{collections::HashMap, env};
+use std::env;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+
+#[derive(Serialize)]
+struct FindMissingRequest {
+    ids: Vec<i32>,
+}
 
 #[derive(Deserialize)]
 struct FindMissingResponse {
@@ -9,8 +14,7 @@ struct FindMissingResponse {
 }
 
 pub(crate) async fn find_missing(ids: Vec<i32>) -> Result<Vec<i32>> {
-    let mut payload = HashMap::new();
-    payload.insert("ids", ids);
+    let payload = FindMissingRequest { ids };
     let client = reqwest::Client::new();
     let endpoint = format!(
         "http://{}:{}/find-missing",

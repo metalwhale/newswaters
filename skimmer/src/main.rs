@@ -157,7 +157,7 @@ async fn consume_summaries(mut repo: Repository, is_job: bool) -> Result<()> {
                 } else {
                     continue;
                 };
-                let embedding = inference::embed(&sentence).await?;
+                let embedding = inference::embed(sentence).await?;
                 search_engine::upsert(id, embedding).await?;
                 println!("[INFO] main.consume_summaries (id={})", id);
             }
