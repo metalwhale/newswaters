@@ -7,6 +7,15 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    analyses (item_id) {
+        item_id -> Int4,
+        keyword -> Nullable<Text>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     item_urls (item_id) {
         item_id -> Int4,
         html -> Nullable<Text>,
@@ -43,9 +52,11 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(analyses -> items (item_id));
 diesel::joinable!(item_urls -> items (item_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    analyses,
     item_urls,
     items,
 );

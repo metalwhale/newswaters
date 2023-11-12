@@ -11,14 +11,11 @@ use diesel::{
     sql_types::*,
 };
 
+use super::Repository;
 use crate::{
     schema::{item_urls, items, sql_types::ItemType},
     service::hacker_news::{Item, ItemUrl},
 };
-
-pub(crate) struct Repository {
-    connection: PgConnection,
-}
 
 impl Repository {
     pub(crate) fn new() -> Result<Self> {
