@@ -31,16 +31,11 @@ pub(crate) async fn find_missing(ids: Vec<i32>) -> Result<Vec<i32>> {
 #[derive(Serialize)]
 struct UpsertRequest {
     id: i32,
-    sentence: String,
     embedding: Vec<f32>,
 }
 
-pub(crate) async fn upsert(id: i32, sentence: String, embedding: Vec<f32>) -> Result<()> {
-    let payload = UpsertRequest {
-        id,
-        sentence,
-        embedding,
-    };
+pub(crate) async fn upsert(id: i32, embedding: Vec<f32>) -> Result<()> {
+    let payload = UpsertRequest { id, embedding };
     let client = reqwest::Client::new();
     let endpoint = format!(
         "http://{}:{}/upsert",

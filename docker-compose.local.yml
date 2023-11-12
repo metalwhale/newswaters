@@ -38,7 +38,6 @@ services:
       - SEARCH_ENGINE_VECTOR_PORT=6334
       - SEARCH_ENGINE_VECTOR_COLLECTION=app
       - SEARCH_ENGINE_VECTOR_SIZE=768 # See: https://huggingface.co/jinaai/jina-embeddings-v2-base-en/blob/d411fe9/config.json#L18
-      - SEARCH_ENGINE_TEXT_STORAGE_PATH=/usr/src/newswaters/search-engine/lib/tantivy/storage
     volumes:
       - ./:/usr/src/newswaters/
     tty: true
