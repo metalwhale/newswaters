@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 struct FindMissingRequest {
+    collection_name: String,
     ids: Vec<i32>,
 }
 
@@ -14,7 +15,10 @@ struct FindMissingResponse {
 }
 
 pub(crate) async fn find_missing(ids: Vec<i32>) -> Result<Vec<i32>> {
-    let payload = FindMissingRequest { ids };
+    let payload = FindMissingRequest {
+        collection_name: env::var("SEARCH_ENGINE_VECTOR_COLLECTION_NAME")?,
+        ids,
+    };
     let client = reqwest::Client::new();
     let endpoint = format!(
         "http://{}:{}/find-missing",
@@ -34,12 +38,17 @@ pub(crate) async fn find_missing(ids: Vec<i32>) -> Result<Vec<i32>> {
 
 #[derive(Serialize)]
 struct UpsertRequest {
+    collection_name: String,
     id: i32,
     embedding: Vec<f32>,
 }
 
 pub(crate) async fn upsert(id: i32, embedding: Vec<f32>) -> Result<()> {
-    let payload = UpsertRequest { id, embedding };
+    let payload = UpsertRequest {
+        collection_name: env::var("SEARCH_ENGINE_VECTOR_COLLECTION_NAME")?,
+        id,
+        embedding,
+    };
     let client = reqwest::Client::new();
     let endpoint = format!(
         "http://{}:{}/upsert",

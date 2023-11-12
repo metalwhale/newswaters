@@ -10,7 +10,6 @@ use qdrant_client::{
 };
 
 pub(crate) struct VectorRepository {
-    collection_name: String,
     client: QdrantClient,
 }
 
@@ -22,33 +21,32 @@ impl VectorRepository {
             env::var("SEARCH_ENGINE_VECTOR_PORT")?
         );
         let client = QdrantClient::from_url(&url).build()?;
-        let collection_name = env::var("SEARCH_ENGINE_VECTOR_COLLECTION")?;
-        if !client.has_collection(&collection_name).await? {
-            client
-                .create_collection(&CreateCollection {
-                    collection_name: collection_name.clone(),
-                    vectors_config: Some(VectorsConfig {
-                        config: Some(Config::Params(VectorParams {
-                            size: 768, // See: https://huggingface.co/jinaai/jina-embeddings-v2-base-en/blob/d411fe9/config.json#L18
-                            distance: Distance::Cosine.into(),
-                            ..Default::default()
-                        })),
-                    }),
-                    ..Default::default()
-                })
-                .await?;
+        let collection_names = env::var("SEARCH_ENGINE_VECTOR_COLLECTION_NAMES")?;
+        for name in collection_names.split(",") {
+            if !client.has_collection(name).await? {
+                client
+                    .create_collection(&CreateCollection {
+                        collection_name: name.to_string(),
+                        vectors_config: Some(VectorsConfig {
+                            config: Some(Config::Params(VectorParams {
+                                size: 768, // See: https://huggingface.co/jinaai/jina-embeddings-v2-base-en/blob/d411fe9/config.json#L18
+                                distance: Distance::Cosine.into(),
+                                ..Default::default()
+                            })),
+                        }),
+                        ..Default::default()
+                    })
+                    .await?;
+            }
         }
-        return Ok(Self {
-            collection_name,
-            client,
-        });
+        return Ok(Self { client });
     }
 
-    pub(crate) async fn find_missing(&self, ids: Vec<i32>) -> Result<Vec<i32>> {
+    pub(crate) async fn find_missing(&self, collection_name: String, ids: Vec<i32>) -> Result<Vec<i32>> {
         let points = self
             .client
             .get_points(
-                &self.collection_name,
+                collection_name,
                 &ids.iter().map(|i| (*i as u64).into()).collect::<Vec<PointId>>(),
                 Some(false),
                 Some(false),
@@ -76,19 +74,24 @@ impl VectorRepository {
         Ok(missing_ids)
     }
 
-    pub(crate) async fn upsert(&self, id: i32, embedding: Vec<f32>) -> Result<()> {
+    pub(crate) async fn upsert(&self, collection_name: String, id: i32, embedding: Vec<f32>) -> Result<()> {
         let points = vec![PointStruct::new(id as u64, embedding, Payload::new())];
         self.client
-            .upsert_points_blocking(self.collection_name.clone(), points, None)
+            .upsert_points_blocking(collection_name, points, None)
             .await?;
         Ok(())
     }
 
-    pub(crate) async fn search_similar(&self, embedding: Vec<f32>, limit: u64) -> Result<Vec<(i32, f32)>> {
+    pub(crate) async fn search_similar(
+        &self,
+        collection_name: String,
+        embedding: Vec<f32>,
+        limit: u64,
+    ) -> Result<Vec<(i32, f32)>> {
         let points = self
             .client
             .search_points(&SearchPoints {
-                collection_name: self.collection_name.clone(),
+                collection_name,
                 vector: embedding,
                 limit,
                 ..Default::default()
