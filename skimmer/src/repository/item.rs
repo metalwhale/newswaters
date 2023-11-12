@@ -14,7 +14,7 @@ use diesel::{
 use super::Repository;
 use crate::{
     schema::{item_urls, items, sql_types::ItemType},
-    service::hacker_news::{Item, ItemUrl},
+    service::{Item, ItemUrl},
 };
 
 impl Repository {
@@ -80,19 +80,19 @@ impl Repository {
     }
 
     pub(crate) fn find_summary_missing_items(&mut self, ids: &[i32]) -> Result<Vec<(i32, String, String)>> {
-        let summary_missing_item_urls = diesel::sql_query(format!(
-            "SELECT item_id AS id, title, item_urls.text \
+        let summary_missing_items = diesel::sql_query(format!(
+            "SELECT id, title, item_urls.text \
             FROM unnest(ARRAY[{}]) AS s(i) \
             JOIN items ON s.i = items.id \
             JOIN item_urls ON s.i = item_urls.item_id \
-            WHERE item_urls.text IS NOT NULL AND summary IS NULL",
+            WHERE title IS NOT NULL AND item_urls.text IS NOT NULL AND summary IS NULL",
             ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", ")
         ))
         .get_results::<SummaryMissingItemRecord>(&mut self.connection)?
         .into_iter()
         .map(|r| (r.id, r.title, r.text))
         .collect();
-        return Ok(summary_missing_item_urls);
+        return Ok(summary_missing_items);
     }
 
     pub(crate) fn find_summary_missing_items_excluding(
@@ -100,11 +100,11 @@ impl Repository {
         ids: &[i32],
         limit: usize,
     ) -> Result<Vec<(i32, String, String)>> {
-        let summary_missing_item_urls = diesel::sql_query(format!(
-            "SELECT item_id AS id, title, item_urls.text \
+        let summary_missing_items = diesel::sql_query(format!(
+            "SELECT id, title, item_urls.text \
             FROM items \
             JOIN item_urls ON items.id = item_urls.item_id \
-            WHERE item_urls.text IS NOT NULL AND summary IS NULL AND id NOT IN ({}) \
+            WHERE title IS NOT NULL AND item_urls.text IS NOT NULL AND summary IS NULL AND id NOT IN ({}) \
             ORDER BY id DESC LIMIT {}",
             ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", "),
             limit
@@ -113,11 +113,11 @@ impl Repository {
         .into_iter()
         .map(|r| (r.id, r.title, r.text))
         .collect();
-        return Ok(summary_missing_item_urls);
+        return Ok(summary_missing_items);
     }
 
     pub(crate) fn find_summary_existing_items(&mut self, limit: usize) -> Result<Vec<i32>> {
-        let summary_missing_item_urls = diesel::sql_query(format!(
+        let summary_existing_items = diesel::sql_query(format!(
             "SELECT id \
             FROM items \
             JOIN item_urls ON items.id = item_urls.item_id \
@@ -129,7 +129,7 @@ impl Repository {
         .into_iter()
         .map(|r| (r.id))
         .collect();
-        return Ok(summary_missing_item_urls);
+        return Ok(summary_existing_items);
     }
 
     pub(crate) fn find_item_summaries(&mut self, ids: &[i32]) -> Result<Vec<(i32, Option<String>, Option<String>)>> {

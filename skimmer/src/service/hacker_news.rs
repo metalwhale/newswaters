@@ -3,34 +3,13 @@ use chromiumoxide::browser::{Browser, BrowserConfig};
 use futures::StreamExt;
 use html2text::{self, render::text_renderer::TrivialDecorator};
 use reqwest::header::CONTENT_TYPE;
-use serde::Deserialize;
+
+use super::{Item, ItemUrl};
 
 // See: https://github.com/HackerNews/API/tree/38154ba#max-item-id
 pub(crate) async fn get_max_item_id() -> Result<i32> {
     let response = reqwest::get("https://hacker-news.firebaseio.com/v0/maxitem.json?print=pretty").await?;
     Ok(response.text().await?.trim().parse()?)
-}
-
-#[derive(Deserialize)]
-pub(crate) struct Item {
-    pub id: i32,
-    pub deleted: Option<bool>,
-    #[serde(rename = "type")]
-    pub type_: Option<String>,
-    pub by: Option<String>,
-    pub time: Option<i64>,
-    pub text: Option<String>,
-    pub dead: Option<bool>,
-    pub parent: Option<i32>,
-    pub poll: Option<i32>,
-    #[allow(dead_code)]
-    pub kids: Option<Vec<i32>>,
-    pub url: Option<String>,
-    pub score: Option<i32>,
-    pub title: Option<String>,
-    #[allow(dead_code)]
-    pub parts: Option<Vec<i32>>,
-    pub descendants: Option<i32>,
 }
 
 // See: https://github.com/HackerNews/API/tree/38154ba#items
@@ -42,12 +21,6 @@ pub(crate) async fn get_item(id: i32) -> Result<Item> {
     .await?;
     let item = response.json::<Item>().await?;
     Ok(item)
-}
-
-pub(crate) enum ItemUrl {
-    Finished { html: String, text: String },
-    Skipped { note: String },
-    Canceled { note: String },
 }
 
 pub(crate) async fn get_item_url(url: &str) -> Result<ItemUrl> {
