@@ -1,7 +1,12 @@
-use std::{collections::HashMap, env, time::Duration};
+use std::{env, time::Duration};
 
 use anyhow::Result;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize)]
+struct InstructRequest {
+    instruction: String,
+}
 
 #[derive(Deserialize)]
 struct InstructResponse {
@@ -24,8 +29,7 @@ pub(crate) async fn instruct_summary(title: &str, text: &str) -> Result<String> 
         ",
         title, text
     );
-    let mut payload = HashMap::new();
-    payload.insert("instruction", instruction);
+    let payload = InstructRequest { instruction };
     let client = reqwest::Client::new();
     let endpoint = format!(
         "http://{}:{}/instruct",
@@ -44,14 +48,18 @@ pub(crate) async fn instruct_summary(title: &str, text: &str) -> Result<String> 
     Ok(summary)
 }
 
+#[derive(Serialize)]
+struct EmbedRequest {
+    sentence: String,
+}
+
 #[derive(Deserialize)]
 struct EmbedResponse {
     embedding: Vec<f32>,
 }
 
-pub(crate) async fn embed(sentence: &str) -> Result<Vec<f32>> {
-    let mut payload = HashMap::new();
-    payload.insert("sentence", sentence);
+pub(crate) async fn embed(sentence: String) -> Result<Vec<f32>> {
+    let payload = EmbedRequest { sentence };
     let client = reqwest::Client::new();
     let endpoint = format!(
         "http://{}:{}/embed",

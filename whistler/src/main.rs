@@ -88,7 +88,7 @@ async fn search_similar_items(
     State(state): State<AppState>,
     Json(payload): Json<SearchSimilarItemsRequest>,
 ) -> Result<Json<SearchSimilarItemsResponse>, AppError> {
-    let embedding = inference::embed(&payload.sentence).await?;
+    let embedding = inference::embed(payload.sentence).await?;
     let similar_items = search_engine::search_similar(embedding, payload.limit).await?;
     let ids = similar_items.iter().map(|(id, _)| *id).collect::<Vec<i32>>();
     let mut items_map = match state.repo.find_items(&ids) {

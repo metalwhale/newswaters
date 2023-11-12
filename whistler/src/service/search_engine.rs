@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 struct SearchSimilarRequest {
+    collection_name: String,
     embedding: Vec<f32>,
     limit: u64,
 }
@@ -15,7 +16,11 @@ struct SearchSimilarResponse {
 }
 
 pub(crate) async fn search_similar(embedding: Vec<f32>, limit: u64) -> Result<Vec<(i32, f32)>> {
-    let payload = SearchSimilarRequest { embedding, limit };
+    let payload = SearchSimilarRequest {
+        collection_name: env::var("SEARCH_ENGINE_VECTOR_COLLECTION_NAME")?,
+        embedding,
+        limit,
+    };
     let client = reqwest::Client::new();
     let endpoint = format!(
         "http://{}:{}/search-similar",
