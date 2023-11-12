@@ -1,7 +1,3 @@
-#[macro_use]
-extern crate tantivy;
-
-mod text_repository;
 mod vector_repository;
 
 use std::{env, sync::Arc};
@@ -14,14 +10,12 @@ use axum::{
     routing, Json, Router,
 };
 use serde::{Deserialize, Serialize};
-use text_repository::TextRepository;
 
 use crate::vector_repository::VectorRepository;
 
 #[derive(Clone)]
 struct AppState {
     vector_repo: Arc<VectorRepository>,
-    text_repo: TextRepository,
 }
 
 // See: https://github.com/tokio-rs/axum/blob/c979672/examples/anyhow-error-response/src/main.rs#L34-L57
@@ -63,8 +57,7 @@ async fn main() -> Result<()> {
 
 async fn initialize() -> Result<AppState> {
     let vector_repo = Arc::new(VectorRepository::new().await?);
-    let text_repo = TextRepository::new()?;
-    let state = AppState { vector_repo, text_repo };
+    let state = AppState { vector_repo };
     return Ok(state);
 }
 
@@ -91,8 +84,6 @@ async fn find_missing(
 #[derive(Deserialize)]
 struct UpsertRequest {
     id: i32,
-    #[allow(dead_code)]
-    sentence: String,
     embedding: Vec<f32>,
 }
 
@@ -104,15 +95,13 @@ async fn upsert(
     Json(payload): Json<UpsertRequest>,
 ) -> Result<Json<UpsertResponse>, AppError> {
     state.vector_repo.upsert(payload.id, payload.embedding).await?;
-    // state.text_repo.add(payload.id, payload.sentence)?; // NOTE: Temporarily disable text indexing
     let response = UpsertResponse {};
     Ok(Json(response))
 }
 
 #[derive(Deserialize)]
 struct SearchSimilarRequest {
-    sentence: Option<String>,
-    embedding: Option<Vec<f32>>,
+    embedding: Vec<f32>,
     limit: u64,
 }
 
@@ -125,13 +114,10 @@ async fn search_similar(
     State(state): State<AppState>,
     Json(payload): Json<SearchSimilarRequest>,
 ) -> Result<Json<SearchSimilarResponse>, AppError> {
-    let items = if let Some(sentence) = payload.sentence {
-        state.text_repo.search_similar(sentence, payload.limit as usize)?
-    } else if let Some(embedding) = payload.embedding {
-        state.vector_repo.search_similar(embedding, payload.limit).await?
-    } else {
-        vec![]
-    };
+    let items = state
+        .vector_repo
+        .search_similar(payload.embedding, payload.limit)
+        .await?;
     let response = SearchSimilarResponse { items };
     Ok(Json(response))
 }
