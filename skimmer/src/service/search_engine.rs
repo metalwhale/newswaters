@@ -14,11 +14,8 @@ struct FindMissingResponse {
     missing_ids: Vec<i32>,
 }
 
-pub(crate) async fn find_missing(ids: Vec<i32>) -> Result<Vec<i32>> {
-    let payload = FindMissingRequest {
-        collection_name: env::var("SEARCH_ENGINE_VECTOR_COLLECTION_NAME")?,
-        ids,
-    };
+pub(crate) async fn find_missing(collection_name: String, ids: Vec<i32>) -> Result<Vec<i32>> {
+    let payload = FindMissingRequest { collection_name, ids };
     let client = reqwest::Client::new();
     let endpoint = format!(
         "http://{}:{}/find-missing",
@@ -43,9 +40,9 @@ struct UpsertRequest {
     embedding: Vec<f32>,
 }
 
-pub(crate) async fn upsert(id: i32, embedding: Vec<f32>) -> Result<()> {
+pub(crate) async fn upsert(collection_name: String, id: i32, embedding: Vec<f32>) -> Result<()> {
     let payload = UpsertRequest {
-        collection_name: env::var("SEARCH_ENGINE_VECTOR_COLLECTION_NAME")?,
+        collection_name,
         id,
         embedding,
     };

@@ -36,7 +36,7 @@ services:
       - SEARCH_ENGINE_PORT=3000
       - SEARCH_ENGINE_VECTOR_HOST=search-engine-vector
       - SEARCH_ENGINE_VECTOR_PORT=6334
-      - SEARCH_ENGINE_VECTOR_COLLECTION_NAMES=item_summary
+      - SEARCH_ENGINE_VECTOR_COLLECTION_NAMES=item_summary,analysis_keyword
       - SEARCH_ENGINE_VECTOR_SIZE=768 # See: https://huggingface.co/jinaai/jina-embeddings-v2-base-en/blob/d411fe9/config.json#L18
     volumes:
       - ./:/usr/src/newswaters/
@@ -77,7 +77,8 @@ services:
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
       - SEARCH_ENGINE_HOST=search-engine
       - SEARCH_ENGINE_PORT=3000
-      - SEARCH_ENGINE_VECTOR_COLLECTION_NAME=item_summary
+      - SEARCH_ENGINE_VECTOR_SUMMARY_COLLECTION_NAME=item_summary
+      - SEARCH_ENGINE_VECTOR_KEYWORD_COLLECTION_NAME=analysis_keyword
       - ECHOLOCATOR_HOST=echolocator
       - ECHOLOCATOR_PORT=3000
     volumes:

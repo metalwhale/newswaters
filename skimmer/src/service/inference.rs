@@ -29,6 +29,29 @@ pub(crate) async fn instruct_summary(title: &str, text: &str) -> Result<String> 
         ",
         title, text
     );
+    let summary = instruct(instruction).await?;
+    return Ok(summary);
+}
+
+pub(crate) async fn instruct_keyword(title: &str, text: &str) -> Result<String> {
+    let instruction = format!(
+        "\
+        Please generate related keywords that align with the title and omits any irrelevant text. \
+        Output only the keywords without any additional explanation. \
+        The keywords should be separated by commas. \
+        Don't make up information if it's not provided.\n\n\
+        Title:\n\
+        {}\n\n\
+        Content:\n\
+        {}\n\n\
+        ",
+        title, text
+    );
+    let summary = instruct(instruction).await?;
+    return Ok(summary);
+}
+
+async fn instruct(instruction: String) -> Result<String> {
     let payload = InstructRequest { instruction };
     let client = reqwest::Client::new();
     let endpoint = format!(
@@ -44,8 +67,7 @@ pub(crate) async fn instruct_summary(title: &str, text: &str) -> Result<String> 
         .await?
         .json::<InstructResponse>()
         .await?;
-    let summary = response.completion;
-    Ok(summary)
+    return Ok(response.completion);
 }
 
 #[derive(Serialize)]
