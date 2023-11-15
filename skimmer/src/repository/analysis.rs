@@ -12,20 +12,14 @@ impl Repository {
         &mut self,
         ids: &[i32],
     ) -> Result<Vec<(i32, String, Option<String>, Option<String>)>> {
-        let item_url_condition = if env::var("SKIMMER_ANALYZE_TEXTS_FOLLOW_SUMMARIES").is_ok() {
-            "(item_urls.text IS NOT NULL AND item_urls.summary IS NOT NULL)"
-        } else {
-            "item_urls.text IS NOT NULL"
-        };
         let keyword_missing_analyses = diesel::sql_query(format!(
             "SELECT id, title, items.text, item_urls.text AS url_text \
             FROM unnest(ARRAY[{}]) AS s(i) \
             JOIN items ON s.i = items.id \
             JOIN item_urls ON s.i = item_urls.item_id \
             LEFT JOIN analyses ON s.i = analyses.item_id \
-            WHERE title IS NOT NULL AND (items.text IS NOT NULL OR {}) AND keyword IS NULL",
-            ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", "),
-            item_url_condition
+            WHERE title IS NOT NULL AND (items.text IS NOT NULL OR item_urls.text IS NOT NULL) AND keyword IS NULL",
+            ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", ")
         ))
         .get_results::<KeywordMissingAnalysisRecord>(&mut self.connection)?
         .into_iter()
@@ -39,7 +33,7 @@ impl Repository {
         ids: &[i32],
         limit: usize,
     ) -> Result<Vec<(i32, String, Option<String>, Option<String>)>> {
-        let item_url_condition = if env::var("SKIMMER_ANALYZE_TEXTS_FOLLOW_SUMMARIES").is_ok() {
+        let item_url_condition = if env::var("SKIMMER_ANALYZE_ADDITIONAL_TEXTS_FOLLOW_SUMMARIES").is_ok() {
             "(item_urls.text IS NOT NULL AND item_urls.summary IS NOT NULL)"
         } else {
             "item_urls.text IS NOT NULL"
