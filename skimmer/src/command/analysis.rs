@@ -28,13 +28,12 @@ pub(crate) async fn analyze_texts(mut repo: Repository, is_job: bool) -> Result<
             let text = if let Some(text) = text {
                 text
             } else if let Some(url_text) = url_text {
-                url_text
+                command::shorten_text(&url_text)?
             } else {
                 continue;
             };
-            let shortened_text = command::shorten_text(&text)?;
             let start_time = std::time::Instant::now();
-            let keyword = match inference::instruct_keyword(&title, &shortened_text).await {
+            let keyword = match inference::instruct_keyword(&title, &text).await {
                 Ok(keyword) => keyword,
                 Err(e) => {
                     println!("[ERR] inference.instruct_keyword (id={id}): err={e}");
@@ -42,9 +41,9 @@ pub(crate) async fn analyze_texts(mut repo: Repository, is_job: bool) -> Result<
                 }
             };
             println!(
-                "[INFO] main.analyze_texts (id={}): shortened_text.len={}, keyword.len={}, elapsed_time={:?}",
+                "[INFO] main.analyze_texts (id={}): text.len={}, keyword.len={}, elapsed_time={:?}",
                 id,
-                shortened_text.len(),
+                text.len(),
                 keyword.len(),
                 start_time.elapsed()
             );
