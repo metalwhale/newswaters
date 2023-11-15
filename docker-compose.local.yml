@@ -100,7 +100,7 @@ services:
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
       - SEARCH_ENGINE_HOST=search-engine
       - SEARCH_ENGINE_PORT=3000
-      - SEARCH_ENGINE_VECTOR_COLLECTION_NAMES=analysis_keyword
+      - SEARCH_ENGINE_VECTOR_COLLECTION_NAMES=item_summary,analysis_keyword
       - ECHOLOCATOR_HOST=echolocator
       - ECHOLOCATOR_PORT=3000
       - WHISTLER_PORT=3000
