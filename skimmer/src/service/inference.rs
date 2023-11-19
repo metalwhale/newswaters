@@ -51,6 +51,26 @@ pub(crate) async fn instruct_keyword(title: &str, text: &str) -> Result<String> 
     return Ok(summary);
 }
 
+pub(crate) async fn instruct_summary_query(summary: &str) -> Result<String> {
+    let instruction = format!(
+        "\
+        Please generate up to {} queries aligning with the summary, omitting irrelevant text. \
+        Output queries without additional explanation. \
+        The queries can be affirmations or questions. \
+        Each query should be fewer than {} words and have varying lengths. \
+        Do not make up information if not provided.\n\n\
+        Summary:\n\
+        {}\n\n\
+        Output in JSON array format (not object), with each element being one query.\n\n\
+        ",
+        env::var("SKIMMER_INSTRUCT_SUMMARY_QUERY_MAX_QUERIES_NUM").unwrap_or("5".to_string()),
+        env::var("SKIMMER_INSTRUCT_SUMMARY_QUERY_MAX_WORDS_COUNT").unwrap_or("10".to_string()),
+        summary
+    );
+    let summary = instruct(instruction).await?;
+    return Ok(summary);
+}
+
 async fn instruct(instruction: String) -> Result<String> {
     let payload = InstructRequest { instruction };
     let client = reqwest::Client::new();

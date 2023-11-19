@@ -75,6 +75,10 @@ Whales feed by skimming.
     SKIMMER_IS_JOB=true cargo run -- analyze_texts
     SKIMMER_IS_JOB=true cargo run -- embed_keywords
     ```
+    Analyze summaries:
+    ```bash
+    SKIMMER_IS_JOB=true cargo run -- analyze_summaries
+    ```
 
 ### Run the whistler
 Whales communicate through whistling.

@@ -25,6 +25,7 @@ async fn main() -> Result<()> {
             // Analysis
             "analyze_texts" => command::analysis::analyze_texts(repo, is_job).await?,
             "embed_keywords" => command::analysis::embed_keywords(repo, is_job).await?,
+            "analyze_summaries" => command::analysis::analyze_summaries(repo, is_job).await?,
             _ => {}
         }
     }
