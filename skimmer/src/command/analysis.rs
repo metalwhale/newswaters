@@ -129,7 +129,7 @@ pub(crate) async fn analyze_summaries(mut repo: Repository, is_job: bool) -> Res
             } {
                 Ok(summary_query) => summary_query,
                 Err(e) => {
-                    println!("[ERR] inference.analyze_summaries (id={id}): err={e}");
+                    println!("[ERR] main.analyze_summaries (id={id}): err={e}");
                     continue;
                 }
             };
