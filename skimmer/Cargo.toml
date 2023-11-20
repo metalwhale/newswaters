@@ -1,6 +1,6 @@
 [package]
 name = "skimmer"
-version = "0.5.2"
+version = "0.6.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -14,4 +14,5 @@ futures = "0.3.28"
 html2text = "0.6.0"
 reqwest = { version = "0.11.20", features = ["json"] }
 serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0.108"
 tokio = { version = "1.32.0", features = ["macros", "rt-multi-thread"] }
