@@ -92,6 +92,25 @@ pub(crate) async fn instruct_contradiction_query(premise: &str) -> Result<String
     return Ok(hypothesis);
 }
 
+pub(crate) async fn instruct_subject_query(content: &str) -> Result<String> {
+    let instruction = format!(
+        "\
+        Please generate {} short queries aligning with the content, omitting irrelevant text. \
+        Output queries without additional explanation. \
+        Output each query on a separate line. \
+        The queries must be in the form of instructions or questions. \
+        Each query should be fewer than {} words and have varying lengths.\n\n\
+        Content:\n\
+        {}\n\n\
+        ",
+        env::var("SKIMMER_INSTRUCT_SUBJECT_QUERY_MAX_QUERIES_NUM").unwrap_or("5".to_string()),
+        env::var("SKIMMER_INSTRUCT_SUBJECT_QUERY_MAX_WORDS_COUNT").unwrap_or("5".to_string()),
+        content
+    );
+    let subject = instruct(instruction).await?;
+    return Ok(subject);
+}
+
 async fn instruct(instruction: String) -> Result<String> {
     let payload = InstructRequest { instruction };
     let client = reqwest::Client::new();
