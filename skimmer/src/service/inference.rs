@@ -51,23 +51,45 @@ pub(crate) async fn instruct_keyword(title: &str, text: &str) -> Result<String> 
     return Ok(summary);
 }
 
-pub(crate) async fn instruct_summary_query(summary: &str) -> Result<String> {
+pub(crate) async fn instruct_anchor_query(content: &str) -> Result<String> {
     let instruction = format!(
         "\
-        Please generate {} queries aligning with the summary, omitting irrelevant text. \
-        Output queries without additional explanation. \
-        The queries must be in the form of instructions or questions. \
-        Each query should be fewer than {} words and have varying lengths.\n\n\
-        Summary:\n\
+        Please generate a sentence aligning with the provided content, omitting irrelevant text. \
+        Output the sentence without additional explanation. \
+        The sentence should be in the form of instructions and must not contain any proper nouns. \
+        Ensure it is fewer than {} words.\n\n\
+        Content:\n\
         {}\n\n\
-        Output in JSON array format (not object), with each element being one query.\n\n\
         ",
-        env::var("SKIMMER_INSTRUCT_SUMMARY_QUERY_MAX_QUERIES_NUM").unwrap_or("5".to_string()),
-        env::var("SKIMMER_INSTRUCT_SUMMARY_QUERY_MAX_WORDS_COUNT").unwrap_or("10".to_string()),
-        summary
+        env::var("SKIMMER_INSTRUCT_ANCHOR_QUERY_MAX_WORDS_COUNT").unwrap_or("20".to_string()),
+        content
     );
-    let summary = instruct(instruction).await?;
-    return Ok(summary);
+    let query = instruct(instruction).await?;
+    return Ok(query);
+}
+
+pub(crate) async fn instruct_entailment_query(premise: &str) -> Result<String> {
+    let instruction = format!(
+        "Refine the following sentence while keeping its meaning unchanged. \
+        Output the sentence without additional explanation.\n\n\
+        \"{}\"\n\
+        ",
+        premise
+    );
+    let hypothesis = instruct(instruction).await?;
+    return Ok(hypothesis);
+}
+
+pub(crate) async fn instruct_contradiction_query(premise: &str) -> Result<String> {
+    let instruction = format!(
+        "Make modifications to the following sentence, ensuring that its meaning becomes entirely contradictory. \
+        Output the sentence without additional explanation.\n\n\
+        \"{}\"\n\
+        ",
+        premise
+    );
+    let hypothesis = instruct(instruction).await?;
+    return Ok(hypothesis);
 }
 
 async fn instruct(instruction: String) -> Result<String> {

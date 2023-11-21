@@ -1,6 +1,7 @@
 use std::{env, time::Duration};
 
 use anyhow::Result;
+use serde::Serialize;
 use tokio::{self};
 
 use crate::{
@@ -102,44 +103,42 @@ pub(crate) async fn analyze_summaries(mut repo: Repository, is_job: bool) -> Res
         }
         for (id, summary) in analyses {
             let start_time = std::time::Instant::now();
-            let summary_query = match {
-                let max_retry_count = 10;
-                let mut retry_count = 0;
-                // TODO: Find a better way to constrain output with the correct format
-                loop {
-                    let summary_query = match inference::instruct_summary_query(&summary).await {
-                        Ok(summary_query) => summary_query,
-                        Err(e) => {
-                            println!("[ERR] inference.instruct_summary_query (id={id}): err={e}");
-                            continue;
-                        }
-                    };
-                    match serde_json::from_str::<serde_json::Value>(&summary_query) {
-                        Ok(_) => break Ok(summary_query),
-                        Err(e) => {
-                            tokio::time::sleep(Duration::from_secs(1)).await;
-                            retry_count += 1;
-                            if retry_count >= max_retry_count {
-                                break Err(e);
-                            }
-                            continue;
-                        }
-                    }
-                }
-            } {
-                Ok(summary_query) => summary_query,
+            let anchor_query = match inference::instruct_anchor_query(&summary).await {
+                Ok(query) => query,
                 Err(e) => {
-                    println!("[ERR] main.analyze_summaries (id={id}): err={e}");
+                    println!("[ERR] inference.instruct_query_anchor (id={id}): err={e}");
+                    continue;
+                }
+            };
+            let entailment_query = match inference::instruct_entailment_query(&anchor_query).await {
+                Ok(query) => query,
+                Err(e) => {
+                    println!("[ERR] inference.instruct_query_entailment (id={id}): err={e}");
+                    continue;
+                }
+            };
+            let contradiction_query = match inference::instruct_contradiction_query(&anchor_query).await {
+                Ok(query) => query,
+                Err(e) => {
+                    println!("[ERR] inference.instruct_query_contradiction (id={id}): err={e}");
                     continue;
                 }
             };
             println!(
-                "[INFO] main.analyze_summaries (id={}): summary.len={}, summary_query.len={}, elapsed_time={:?}",
+                "[INFO] main.analyze_summaries (id={}): summary.len={}, \
+                anchor_query.len={}, entailment_query.len={}, contradiction_query.len={}, elapsed_time={:?}",
                 id,
                 summary.len(),
-                summary_query.len(),
+                anchor_query.len(),
+                entailment_query.len(),
+                contradiction_query.len(),
                 start_time.elapsed()
             );
+            let summary_query = serde_json::to_string(&SummaryQuery {
+                anchor: vec![anchor_query],
+                entailment: vec![entailment_query],
+                contradiction: vec![contradiction_query],
+            })?;
             repo.update_analysis(id, summary_query)?;
         }
         if is_job {
@@ -148,4 +147,11 @@ pub(crate) async fn analyze_summaries(mut repo: Repository, is_job: bool) -> Res
             tokio::time::sleep(Duration::from_secs(60)).await;
         }
     }
+}
+
+#[derive(Serialize)]
+struct SummaryQuery {
+    anchor: Vec<String>,
+    entailment: Vec<String>,
+    contradiction: Vec<String>,
 }
