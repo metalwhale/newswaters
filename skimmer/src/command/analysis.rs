@@ -124,6 +124,13 @@ pub(crate) async fn analyze_summaries(mut repo: Repository, is_job: bool) -> Res
                     continue;
                 }
             };
+            let subject_query = match inference::instruct_subject_query(&anchor_query).await {
+                Ok(query) => query,
+                Err(e) => {
+                    println!("[ERR] inference.instruct_query_entailment (id={id}): err={e}");
+                    continue;
+                }
+            };
             println!(
                 "[INFO] main.analyze_summaries (id={}): summary.len={}, \
                 anchor_query.len={}, entailment_query.len={}, contradiction_query.len={}, elapsed_time={:?}",
@@ -138,6 +145,7 @@ pub(crate) async fn analyze_summaries(mut repo: Repository, is_job: bool) -> Res
                 anchor: vec![anchor_query],
                 entailment: vec![entailment_query],
                 contradiction: vec![contradiction_query],
+                subject: subject_query.split("\n").map(str::to_string).collect(),
             })?;
             repo.update_analysis(id, summary_query)?;
         }
@@ -154,4 +162,5 @@ struct SummaryQuery {
     anchor: Vec<String>,
     entailment: Vec<String>,
     contradiction: Vec<String>,
+    subject: Vec<String>,
 }
