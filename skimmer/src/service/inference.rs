@@ -56,9 +56,8 @@ pub(crate) async fn instruct_summary_query(summary: &str) -> Result<String> {
         "\
         Please generate {} queries aligning with the summary, omitting irrelevant text. \
         Output queries without additional explanation. \
-        The queries can be affirmations or questions. \
-        Each query should be fewer than {} words and have varying lengths. \
-        Do not make up information if not provided.\n\n\
+        The queries must be in the form of instructions or questions. \
+        Each query should be fewer than {} words and have varying lengths.\n\n\
         Summary:\n\
         {}\n\n\
         Output in JSON array format (not object), with each element being one query.\n\n\
