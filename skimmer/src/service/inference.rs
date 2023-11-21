@@ -17,7 +17,7 @@ pub(crate) async fn instruct_summary(title: &str, text: &str) -> Result<String> 
     let instruction = format!(
         "\
         Please generate related topics and provide a detailed summary that aligns with the title and omits any irrelevant text. \
-        Output only the title if the content is not related to it. \
+        Don't output the title. \
         Don't make up information if it's not provided.\n\n\
         Title:\n\
         {}\n\n\
@@ -54,7 +54,7 @@ pub(crate) async fn instruct_keyword(title: &str, text: &str) -> Result<String> 
 pub(crate) async fn instruct_summary_query(summary: &str) -> Result<String> {
     let instruction = format!(
         "\
-        Please generate up to {} queries aligning with the summary, omitting irrelevant text. \
+        Please generate {} queries aligning with the summary, omitting irrelevant text. \
         Output queries without additional explanation. \
         The queries can be affirmations or questions. \
         Each query should be fewer than {} words and have varying lengths. \
