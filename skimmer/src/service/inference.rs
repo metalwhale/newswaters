@@ -98,7 +98,7 @@ pub(crate) async fn instruct_subject_query(content: &str) -> Result<String> {
         Please generate {} different subjects aligning with the content. \
         Output subjects without additional explanation. \
         Output each subject on a separate line. \
-        Each subject should be fewer than {} words and have varying lengths.\n\n\
+        Each subject must consist of fewer than {} words.\n\n\
         Content:\n\
         {}\n\n\
         ",
