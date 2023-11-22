@@ -95,14 +95,14 @@ pub(crate) async fn instruct_contradiction_query(premise: &str) -> Result<String
 pub(crate) async fn instruct_subject_query(content: &str) -> Result<String> {
     let instruction = format!(
         "\
-        Please generate {} queries aligning with the summary, omitting irrelevant text. \
-        Output queries without additional explanation. \
-        The queries must be in the form of instructions or questions. \
-        Each query should be fewer than {} words and have varying lengths.\n\n\
-        Summary:\n\
+        Please generate {} different subjects aligning with the content. \
+        Output subjects without additional explanation. \
+        Output each subject on a separate line. \
+        Each subject should be fewer than {} words and have varying lengths.\n\n\
+        Content:\n\
         {}\n\n\
         ",
-        env::var("SKIMMER_INSTRUCT_SUBJECT_QUERY_MAX_QUERIES_NUM").unwrap_or("5".to_string()),
+        env::var("SKIMMER_INSTRUCT_SUBJECT_QUERY_MAX_SUBJECTS_NUM").unwrap_or("5".to_string()),
         env::var("SKIMMER_INSTRUCT_SUBJECT_QUERY_MAX_WORDS_COUNT").unwrap_or("5".to_string()),
         content
     );
