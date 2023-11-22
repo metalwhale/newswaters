@@ -124,7 +124,7 @@ pub(crate) async fn analyze_summaries(mut repo: Repository, is_job: bool) -> Res
                     continue;
                 }
             };
-            let subject_query = match inference::instruct_subject_query(&anchor_query).await {
+            let subject_query = match inference::instruct_subject_query(&summary).await {
                 Ok(query) => query,
                 Err(e) => {
                     println!("[ERR] inference.instruct_query_entailment (id={id}): err={e}");
