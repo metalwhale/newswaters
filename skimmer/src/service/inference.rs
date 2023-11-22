@@ -98,7 +98,7 @@ pub(crate) async fn instruct_subject_query(content: &str) -> Result<String> {
         Please generate {} short queries aligning with the content, omitting irrelevant text. \
         Output queries without additional explanation. \
         Output each query on a separate line. \
-        The queries must be in the form of instructions or questions. \
+        The queries must be in the form of questions and should not include proper nouns. \
         Each query should be fewer than {} words and have varying lengths.\n\n\
         Content:\n\
         {}\n\n\

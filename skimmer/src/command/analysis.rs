@@ -133,12 +133,14 @@ pub(crate) async fn analyze_summaries(mut repo: Repository, is_job: bool) -> Res
             };
             println!(
                 "[INFO] main.analyze_summaries (id={}): summary.len={}, \
-                anchor_query.len={}, entailment_query.len={}, contradiction_query.len={}, elapsed_time={:?}",
+                anchor_query.len={}, entailment_query.len={}, contradiction_query.len={}, subject_query.len={}, \
+                elapsed_time={:?}",
                 id,
                 summary.len(),
                 anchor_query.len(),
                 entailment_query.len(),
                 contradiction_query.len(),
+                subject_query.len(),
                 start_time.elapsed()
             );
             let summary_query = serde_json::to_string(&SummaryQuery {
