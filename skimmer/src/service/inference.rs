@@ -56,7 +56,7 @@ pub(crate) async fn instruct_anchor_query(content: &str) -> Result<String> {
         "\
         Please generate a sentence aligning with the provided content, omitting irrelevant text. \
         Output the sentence without additional explanation. \
-        The sentence should be in the form of instructions and must not contain any proper nouns. \
+        The sentence should be in the form of instructions. \
         Ensure it is fewer than {} words.\n\n\
         Content:\n\
         {}\n\n\
