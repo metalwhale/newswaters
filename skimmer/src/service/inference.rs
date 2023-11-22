@@ -95,10 +95,10 @@ pub(crate) async fn instruct_contradiction_query(premise: &str) -> Result<String
 pub(crate) async fn instruct_subject_query(content: &str) -> Result<String> {
     let instruction = format!(
         "\
-        Please generate {} short queries aligning with the content, omitting irrelevant text. \
+        Please generate {} queries aligning with the content, omitting irrelevant text. \
         Output queries without additional explanation. \
         Output each query on a separate line. \
-        The queries must be in the form of questions and should not include proper nouns. \
+        The queries must be in the form of instructions or questions. \
         Each query should be fewer than {} words and have varying lengths.\n\n\
         Content:\n\
         {}\n\n\
