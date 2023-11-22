@@ -44,7 +44,7 @@ where
 #[tokio::main]
 async fn main() -> Result<()> {
     let state = initialize().await?;
-    println!("[INFO] main: initialize");
+    println!("[INFO] main.initialize");
     let app = Router::new()
         .route("/healthz", routing::get(|| async { "Ok" }))
         .route("/instruct", routing::post(instruct))

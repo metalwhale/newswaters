@@ -6,7 +6,7 @@ extern crate intel_mkl_src;
 #[cfg(feature = "accelerate")]
 extern crate accelerate_src;
 
-use anyhow::{Error, Ok, Result};
+use anyhow::{Error, Result};
 use candle_core::{DType, Device, Module, Tensor};
 use candle_nn::VarBuilder;
 use candle_transformers::models::jina_bert::{BertModel, Config};
