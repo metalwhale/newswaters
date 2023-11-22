@@ -106,28 +106,28 @@ pub(crate) async fn analyze_summaries(mut repo: Repository, is_job: bool) -> Res
             let anchor_query = match inference::instruct_anchor_query(&summary).await {
                 Ok(query) => query,
                 Err(e) => {
-                    println!("[ERR] inference.instruct_query_anchor (id={id}): err={e}");
+                    println!("[ERR] inference.instruct_anchor_query (id={id}): err={e}");
                     continue;
                 }
             };
             let entailment_query = match inference::instruct_entailment_query(&anchor_query).await {
                 Ok(query) => query,
                 Err(e) => {
-                    println!("[ERR] inference.instruct_query_entailment (id={id}): err={e}");
+                    println!("[ERR] inference.instruct_entailment_query (id={id}): err={e}");
                     continue;
                 }
             };
             let contradiction_query = match inference::instruct_contradiction_query(&anchor_query).await {
                 Ok(query) => query,
                 Err(e) => {
-                    println!("[ERR] inference.instruct_query_contradiction (id={id}): err={e}");
+                    println!("[ERR] inference.instruct_contradiction_query (id={id}): err={e}");
                     continue;
                 }
             };
             let subject_query = match inference::instruct_subject_query(&summary).await {
                 Ok(query) => query,
                 Err(e) => {
-                    println!("[ERR] inference.instruct_query_entailment (id={id}): err={e}");
+                    println!("[ERR] inference.instruct_subject_query (id={id}): err={e}");
                     continue;
                 }
             };
