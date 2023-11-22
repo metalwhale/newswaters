@@ -147,7 +147,7 @@ pub(crate) async fn analyze_summaries(mut repo: Repository, is_job: bool) -> Res
                 anchor: vec![anchor_query],
                 entailment: vec![entailment_query],
                 contradiction: vec![contradiction_query],
-                subject: subject_query.split("\n").map(str::to_string).collect(),
+                subject: subject_query,
             })?;
             repo.update_analysis(id, summary_query)?;
         }
@@ -164,5 +164,5 @@ struct SummaryQuery {
     anchor: Vec<String>,
     entailment: Vec<String>,
     contradiction: Vec<String>,
-    subject: Vec<String>,
+    subject: String,
 }
