@@ -51,6 +51,19 @@ services:
   ##############
   # Applications
   ##############
+  beach:
+    build:
+      context: ./beach
+      dockerfile: Dockerfile.local
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@database:${DATABASE_PORT}/${DATABASE_DB}
+    volumes:
+      - ./:/usr/src/newswaters/
+    tty: true
+    working_dir: /usr/src/newswaters/beach/
   echolocator:
     build:
       context: ./echolocator
