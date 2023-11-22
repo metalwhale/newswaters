@@ -225,8 +225,9 @@ checksum = "a2bd12c1caf447e69cd4528f47f94d203fd2582878ecb9e9465484c4148a8223"
 
 [[package]]
 name = "candle-core"
-version = "0.3.0"
-source = "git+https://github.com/huggingface/candle.git?rev=0ec5ebc#0ec5ebcec429fe2bb85a6a7f780509bb1831b024"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d60d9b91c73bc662dc45aff607f5ffe79724b7cf7d7c8dc12a72b25921683b67"
 dependencies = [
  "byteorder",
  "gemm",
@@ -245,8 +246,9 @@ dependencies = [
 
 [[package]]
 name = "candle-nn"
-version = "0.3.0"
-source = "git+https://github.com/huggingface/candle.git?rev=0ec5ebc#0ec5ebcec429fe2bb85a6a7f780509bb1831b024"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4eb6e13e7076439309786482d4d4c1b4e1f2b102ca93513372d5419ffcf5df25"
 dependencies = [
  "candle-core",
  "half",
@@ -259,9 +261,11 @@ dependencies = [
 
 [[package]]
 name = "candle-transformers"
-version = "0.3.0"
-source = "git+https://github.com/huggingface/candle.git?rev=0ec5ebc#0ec5ebcec429fe2bb85a6a7f780509bb1831b024"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0169336de9dc62dd84e19af1408e53ef8ad07eef8fc103cfebf5b6c3e3f23c2c"
 dependencies = [
+ "byteorder",
  "candle-core",
  "candle-nn",
  "num-traits",
@@ -269,6 +273,7 @@ dependencies = [
  "rayon",
  "serde",
  "serde_json",
+ "serde_plain",
  "tracing",
  "wav",
 ]
@@ -510,7 +515,7 @@ dependencies = [
 
 [[package]]
 name = "echolocator"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "anyhow",
  "axum",
@@ -1760,6 +1765,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4beec8bce849d58d06238cb50db2e1c417cfeafa4c63f692b15c82b7c80f8335"
 dependencies = [
  "itoa",
+ "serde",
+]
+
+[[package]]
+name = "serde_plain"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ce1fc6db65a611022b23a0dec6975d63fb80a302cb3388835ff02c097258d50"
+dependencies = [
  "serde",
 ]
 
