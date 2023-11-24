@@ -1,10 +1,10 @@
-name: skimmer
+name: job
 on:
   push:
     branches:
       - main
     paths:
-      - skimmer/**
+      - newswaters-job/**
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,7 +17,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: "{{defaultContext}}:skimmer"
+          context: "{{defaultContext}}:newswaters-job"
           file: Dockerfile.deployment
           push: true
-          tags: metalwhaledev/newswaters-skimmer:0.6.3
+          tags: metalwhaledev/newswaters-job:0.1.0

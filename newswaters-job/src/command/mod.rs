@@ -6,10 +6,8 @@ pub(crate) mod analysis;
 pub(crate) mod item;
 
 fn shorten_text(text: &str) -> Result<String> {
-    let min_line_len: usize = env::var("SKIMMER_TEXT_MIN_LINE_LEN")
-        .unwrap_or("80".to_string())
-        .parse()?;
-    let max_total_len: usize = env::var("SKIMMER_TEXT_MAX_TOTAL_LEN")
+    let min_line_len: usize = env::var("JOB_TEXT_MIN_LINE_LEN").unwrap_or("80".to_string()).parse()?;
+    let max_total_len: usize = env::var("JOB_TEXT_MAX_TOTAL_LEN")
         .unwrap_or("4800".to_string())
         .parse()?;
     let mut lines = vec![];

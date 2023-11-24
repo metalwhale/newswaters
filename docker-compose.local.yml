@@ -75,9 +75,9 @@ services:
       - ./models/:/usr/src/models/
     tty: true
     working_dir: /usr/src/newswaters/newswaters-inference/
-  skimmer:
+  job:
     build:
-      context: ./skimmer
+      context: ./newswaters-job
       dockerfile: Dockerfile.local
     depends_on:
       database:
@@ -92,12 +92,12 @@ services:
       - SEARCH_ENGINE_PORT=3000
       - SEARCH_ENGINE_VECTOR_SUMMARY_COLLECTION_NAME=item_summary
       - SEARCH_ENGINE_VECTOR_KEYWORD_COLLECTION_NAME=analysis_keyword
-      - ECHOLOCATOR_HOST=echolocator
-      - ECHOLOCATOR_PORT=3000
+      - INFERENCE_HOST=inference
+      - INFERENCE_PORT=3000
     volumes:
       - ./:/usr/src/newswaters/
     tty: true
-    working_dir: /usr/src/newswaters/skimmer/
+    working_dir: /usr/src/newswaters/newswaters-job/
   whistler:
     build:
       context: ./whistler

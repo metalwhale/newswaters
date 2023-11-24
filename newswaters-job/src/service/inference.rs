@@ -60,7 +60,7 @@ pub(crate) async fn instruct_anchor_query(content: &str) -> Result<String> {
         Content:\n\
         {}\n\n\
         ",
-        env::var("SKIMMER_INSTRUCT_ANCHOR_QUERY_MAX_WORDS_COUNT").unwrap_or("20".to_string()),
+        env::var("JOB_INSTRUCT_ANCHOR_QUERY_MAX_WORDS_COUNT").unwrap_or("20".to_string()),
         content
     );
     let query = instruct(instruction).await?;
@@ -101,8 +101,8 @@ pub(crate) async fn instruct_subject_query(content: &str) -> Result<String> {
         Content:\n\
         {}\n\n\
         ",
-        env::var("SKIMMER_INSTRUCT_SUBJECT_QUERY_MAX_SUBJECTS_NUM").unwrap_or("5".to_string()),
-        env::var("SKIMMER_INSTRUCT_SUBJECT_QUERY_MAX_WORDS_COUNT").unwrap_or("5".to_string()),
+        env::var("JOB_INSTRUCT_SUBJECT_QUERY_MAX_SUBJECTS_NUM").unwrap_or("5".to_string()),
+        env::var("JOB_INSTRUCT_SUBJECT_QUERY_MAX_WORDS_COUNT").unwrap_or("5".to_string()),
         content
     );
     let subject = instruct(instruction).await?;
@@ -114,8 +114,8 @@ async fn instruct(instruction: String) -> Result<String> {
     let client = reqwest::Client::new();
     let endpoint = format!(
         "http://{}:{}/instruct",
-        env::var("ECHOLOCATOR_HOST")?,
-        env::var("ECHOLOCATOR_PORT")?
+        env::var("INFERENCE_HOST")?,
+        env::var("INFERENCE_PORT")?
     );
     let response = client
         .post(endpoint)
@@ -143,8 +143,8 @@ pub(crate) async fn embed(sentence: String) -> Result<Vec<f32>> {
     let client = reqwest::Client::new();
     let endpoint = format!(
         "http://{}:{}/embed",
-        env::var("ECHOLOCATOR_HOST")?,
-        env::var("ECHOLOCATOR_PORT")?
+        env::var("INFERENCE_HOST")?,
+        env::var("INFERENCE_PORT")?
     );
     let response = client
         .post(endpoint)

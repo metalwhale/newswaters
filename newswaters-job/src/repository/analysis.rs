@@ -36,7 +36,7 @@ impl Repository {
         ids: &[i32],
         limit: usize,
     ) -> Result<Vec<(i32, String, Option<String>, Option<String>)>> {
-        let item_url_condition = if env::var("SKIMMER_FIND_ANALYSES_FOLLOW_SUMMARIES").is_ok() {
+        let item_url_condition = if env::var("JOB_FIND_ANALYSES_FOLLOW_SUMMARIES").is_ok() {
             "(item_urls.text IS NOT NULL AND item_urls.summary IS NOT NULL)"
         } else {
             "item_urls.text IS NOT NULL"
