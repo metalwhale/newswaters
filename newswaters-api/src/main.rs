@@ -45,7 +45,7 @@ where
 #[tokio::main]
 async fn main() -> Result<()> {
     let state = initialize().await?;
-    let prefix = env::var("WHISTLER_PREFIX").unwrap_or("".to_string());
+    let prefix = env::var("API_PREFIX").unwrap_or("".to_string());
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])
         .allow_headers([reqwest::header::CONTENT_TYPE])
@@ -59,7 +59,7 @@ async fn main() -> Result<()> {
         )
         .layer(cors)
         .with_state(state);
-    let port = env::var("WHISTLER_PORT").unwrap_or("3000".to_string());
+    let port = env::var("API_PORT").unwrap_or("3000".to_string());
     axum::Server::bind(&format!("0.0.0.0:{}", port).parse()?)
         .serve(app.into_make_service())
         .await

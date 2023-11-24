@@ -80,11 +80,11 @@ Whales feed by skimming.
     cargo run -- analyze_summaries
     ```
 
-### Run the whistler
+### Run the api
 Whales communicate through whistling.
 1. Get inside the container:
     ```bash
-    docker-compose exec whistler bash
+    docker-compose exec api bash
     ```
 2. Run the server:
     ```bash

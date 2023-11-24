@@ -13,14 +13,14 @@ struct EmbedResponse {
     embedding: Vec<f32>,
 }
 
-// TODO: DRY this function to eliminate duplication with a similar one in "skimmer".
+// TODO: DRY this function to eliminate duplication with a similar one in "newswaters-job".
 pub(crate) async fn embed(sentence: String) -> Result<Vec<f32>> {
     let payload = EmbedRequest { sentence };
     let client = reqwest::Client::new();
     let endpoint = format!(
         "http://{}:{}/embed",
-        env::var("ECHOLOCATOR_HOST")?,
-        env::var("ECHOLOCATOR_PORT")?
+        env::var("INFERENCE_HOST")?,
+        env::var("INFERENCE_PORT")?
     );
     let response = client
         .post(endpoint)

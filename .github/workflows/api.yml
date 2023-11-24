@@ -1,10 +1,10 @@
-name: whistler
+name: api
 on:
   push:
     branches:
       - main
     paths:
-      - whistler/**
+      - newswaters-api/**
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,7 +17,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: "{{defaultContext}}:whistler"
+          context: "{{defaultContext}}:newswaters-api"
           file: Dockerfile.deployment
           push: true
-          tags: metalwhaledev/newswaters-whistler:0.2.6
+          tags: metalwhaledev/newswaters-api:0.1.0

@@ -98,9 +98,9 @@ services:
       - ./:/usr/src/newswaters/
     tty: true
     working_dir: /usr/src/newswaters/newswaters-job/
-  whistler:
+  api:
     build:
-      context: ./whistler
+      context: ./newswaters-api
       dockerfile: Dockerfile.local
     depends_on:
       database:
@@ -114,12 +114,12 @@ services:
       - SEARCH_ENGINE_HOST=search-engine
       - SEARCH_ENGINE_PORT=3000
       - SEARCH_ENGINE_VECTOR_COLLECTION_NAMES=item_summary,analysis_keyword
-      - ECHOLOCATOR_HOST=echolocator
-      - ECHOLOCATOR_PORT=3000
-      - WHISTLER_PORT=3000
+      - INFERENCE_HOST=inference
+      - INFERENCE_PORT=3000
+      - API_PORT=3000
     ports:
       - 3000:3000
     volumes:
       - ./:/usr/src/newswaters/
     tty: true
-    working_dir: /usr/src/newswaters/whistler/
+    working_dir: /usr/src/newswaters/newswaters-api/
