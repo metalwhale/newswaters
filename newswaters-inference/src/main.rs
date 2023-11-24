@@ -50,7 +50,7 @@ async fn main() -> Result<()> {
         .route("/instruct", routing::post(instruct))
         .route("/embed", routing::post(embed))
         .with_state(state);
-    let port = env::var("ECHOLOCATOR_PORT").unwrap_or("3000".to_string());
+    let port = env::var("INFERENCE_PORT").unwrap_or("3000".to_string());
     axum::Server::bind(&format!("0.0.0.0:{}", port).parse()?)
         .serve(app.into_make_service())
         .await

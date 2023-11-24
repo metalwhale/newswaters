@@ -23,11 +23,11 @@ In the ocean, there are no newspapers. Whales refer to it as "newswaters".
     cargo run
     ```
 
-### Run the echolocator
+### Run the inference
 Whales learn about their surrounding environment by echolocating.
 1. Get inside the container:
     ```bash
-    docker-compose exec echolocator bash
+    docker-compose exec inference bash
     ```
 2. Run the server:
     ```bash

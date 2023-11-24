@@ -1,10 +1,10 @@
-name: echolocator
+name: inference
 on:
   push:
     branches:
       - main
     paths:
-      - echolocator/**
+      - newswaters-inference/**
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,7 +17,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: "{{defaultContext}}:echolocator"
+          context: "{{defaultContext}}:newswaters-inference"
           file: Dockerfile.deployment
           push: true
-          tags: metalwhaledev/newswaters-echolocator:0.3.2
+          tags: metalwhaledev/newswaters-inference:0.1.0
