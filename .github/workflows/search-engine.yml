@@ -4,7 +4,7 @@ on:
     branches:
       - main
     paths:
-      - search-engine/**
+      - newswaters-search-engine/**
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,7 +17,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: "{{defaultContext}}:search-engine"
+          context: "{{defaultContext}}:newswaters-search-engine"
           file: Dockerfile.deployment
           push: true
-          tags: metalwhaledev/newswaters-search-engine:0.3.0
+          tags: metalwhaledev/newswaters-search-engine:0.1.0

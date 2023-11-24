@@ -30,7 +30,7 @@ services:
   ###############
   search-engine:
     build:
-      context: search-engine
+      context: newswaters-search-engine
       dockerfile: Dockerfile.local
     environment:
       - SEARCH_ENGINE_PORT=3000
@@ -41,7 +41,7 @@ services:
     volumes:
       - ./:/usr/src/newswaters/
     tty: true
-    working_dir: /usr/src/newswaters/search-engine/
+    working_dir: /usr/src/newswaters/newswaters-search-engine/
   search-engine-vector:
     image: qdrant/qdrant:v1.6.1
     environment:
