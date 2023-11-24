@@ -23,11 +23,11 @@ In the ocean, there are no newspapers. Whales refer to it as "newswaters".
     cargo run
     ```
 
-### Run the echolocator
+### Run the inference
 Whales learn about their surrounding environment by echolocating.
 1. Get inside the container:
     ```bash
-    docker-compose exec echolocator bash
+    docker-compose exec inference bash
     ```
 2. Run the server:
     ```bash
@@ -50,11 +50,11 @@ Whales learn about their surrounding environment by echolocating.
         -d '{"sentence":"Sing a song"}'
     ```
 
-### Run the skimmer
+### Run the job
 Whales feed by skimming.
 1. Get inside the container:
     ```bash
-    docker-compose exec skimmer bash
+    docker-compose exec job bash
     ```
 2. Run migrations:
     ```bash
@@ -62,29 +62,29 @@ Whales feed by skimming.
     ```
 3. Collect items:
     ```bash
-    SKIMMER_IS_JOB=true cargo run -- collect_items
-    SKIMMER_IS_JOB=true cargo run -- collect_item_urls
+    cargo run -- collect_items
+    cargo run -- collect_item_urls
     ```
 4. Summarize texts and embed summaries:
     ```bash
-    SKIMMER_IS_JOB=true cargo run -- summarize_texts
-    SKIMMER_IS_JOB=true cargo run -- embed_summaries
+    cargo run -- summarize_texts
+    cargo run -- embed_summaries
     ```
     Analyze texts and embed keywords:
     ```bash
-    SKIMMER_IS_JOB=true cargo run -- analyze_texts
-    SKIMMER_IS_JOB=true cargo run -- embed_keywords
+    cargo run -- analyze_texts
+    cargo run -- embed_keywords
     ```
     Analyze summaries:
     ```bash
-    SKIMMER_IS_JOB=true cargo run -- analyze_summaries
+    cargo run -- analyze_summaries
     ```
 
-### Run the whistler
+### Run the api
 Whales communicate through whistling.
 1. Get inside the container:
     ```bash
-    docker-compose exec whistler bash
+    docker-compose exec api bash
     ```
 2. Run the server:
     ```bash

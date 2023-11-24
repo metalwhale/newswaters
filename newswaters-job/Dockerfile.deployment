@@ -1,0 +1,21 @@
+# Build
+FROM rust:1.72.0 AS build
+
+COPY . /usr/src/newswaters-job/
+
+WORKDIR /usr/src/newswaters-job/
+
+RUN cargo install diesel_cli --no-default-features --features postgres
+RUN cargo build --release
+
+# Deployment
+FROM debian:trixie-slim
+
+RUN apt update -y && \
+    apt install -y libpq5 ca-certificates chromium
+
+COPY --from=build /usr/local/cargo/bin/diesel /bin/diesel
+COPY --from=build /usr/src/newswaters-job/target/release/newswaters-job /bin/newswaters-job
+COPY ./migrations /usr/src/newswaters-job/migrations
+
+WORKDIR /usr/src/newswaters-job/

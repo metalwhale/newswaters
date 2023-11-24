@@ -1,0 +1,13 @@
+# Build
+FROM rust:1.72.0 AS build
+
+COPY . /usr/src/newswaters-search-engine/
+
+WORKDIR /usr/src/newswaters-search-engine/
+
+RUN cargo build --release
+
+# Deployment
+FROM debian:trixie-slim
+
+COPY --from=build /usr/src/newswaters-search-engine/target/release/newswaters-search-engine /bin/newswaters-search-engine

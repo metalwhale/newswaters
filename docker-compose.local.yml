@@ -30,7 +30,7 @@ services:
   ###############
   search-engine:
     build:
-      context: search-engine
+      context: newswaters-search-engine
       dockerfile: Dockerfile.local
     environment:
       - SEARCH_ENGINE_PORT=3000
@@ -41,7 +41,7 @@ services:
     volumes:
       - ./:/usr/src/newswaters/
     tty: true
-    working_dir: /usr/src/newswaters/search-engine/
+    working_dir: /usr/src/newswaters/newswaters-search-engine/
   search-engine-vector:
     image: qdrant/qdrant:v1.6.1
     environment:
@@ -64,20 +64,20 @@ services:
       - ./:/usr/src/newswaters/
     tty: true
     working_dir: /usr/src/newswaters/beach/
-  echolocator:
+  inference:
     build:
-      context: ./echolocator
+      context: ./newswaters-inference
       dockerfile: Dockerfile.local
     environment:
-      - ECHOLOCATOR_PORT=3000
+      - INFERENCE_PORT=3000
     volumes:
       - ./:/usr/src/newswaters/
       - ./models/:/usr/src/models/
     tty: true
-    working_dir: /usr/src/newswaters/echolocator/
-  skimmer:
+    working_dir: /usr/src/newswaters/newswaters-inference/
+  job:
     build:
-      context: ./skimmer
+      context: ./newswaters-job
       dockerfile: Dockerfile.local
     depends_on:
       database:
@@ -92,15 +92,15 @@ services:
       - SEARCH_ENGINE_PORT=3000
       - SEARCH_ENGINE_VECTOR_SUMMARY_COLLECTION_NAME=item_summary
       - SEARCH_ENGINE_VECTOR_KEYWORD_COLLECTION_NAME=analysis_keyword
-      - ECHOLOCATOR_HOST=echolocator
-      - ECHOLOCATOR_PORT=3000
+      - INFERENCE_HOST=inference
+      - INFERENCE_PORT=3000
     volumes:
       - ./:/usr/src/newswaters/
     tty: true
-    working_dir: /usr/src/newswaters/skimmer/
-  whistler:
+    working_dir: /usr/src/newswaters/newswaters-job/
+  api:
     build:
-      context: ./whistler
+      context: ./newswaters-api
       dockerfile: Dockerfile.local
     depends_on:
       database:
@@ -114,12 +114,12 @@ services:
       - SEARCH_ENGINE_HOST=search-engine
       - SEARCH_ENGINE_PORT=3000
       - SEARCH_ENGINE_VECTOR_COLLECTION_NAMES=item_summary,analysis_keyword
-      - ECHOLOCATOR_HOST=echolocator
-      - ECHOLOCATOR_PORT=3000
-      - WHISTLER_PORT=3000
+      - INFERENCE_HOST=inference
+      - INFERENCE_PORT=3000
+      - API_PORT=3000
     ports:
       - 3000:3000
     volumes:
       - ./:/usr/src/newswaters/
     tty: true
-    working_dir: /usr/src/newswaters/whistler/
+    working_dir: /usr/src/newswaters/newswaters-api/

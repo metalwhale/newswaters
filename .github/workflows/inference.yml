@@ -1,10 +1,10 @@
-name: search-engine
+name: inference
 on:
   push:
     branches:
       - main
     paths:
-      - newswaters-search-engine/**
+      - newswaters-inference/**
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,7 +17,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: "{{defaultContext}}:newswaters-search-engine"
+          context: "{{defaultContext}}:newswaters-inference"
           file: Dockerfile.deployment
           push: true
-          tags: metalwhaledev/newswaters-search-engine:0.1.0
+          tags: metalwhaledev/newswaters-inference:0.1.0

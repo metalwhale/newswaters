@@ -1,0 +1,20 @@
+# Previous
+FROM metalwhaledev/newswaters-inference:0.1.0 AS previous
+
+# Build
+FROM rust:1.72.0 AS build
+
+COPY . /usr/src/newswaters-inference/
+
+WORKDIR /usr/src/newswaters-inference/
+
+RUN cargo build --release
+
+# Deployment
+FROM debian:trixie-slim
+
+RUN apt update -y && \
+    apt install -y ca-certificates
+
+COPY --from=previous /bin/llama /bin/llama
+COPY --from=build /usr/src/newswaters-inference/target/release/newswaters-inference /bin/newswaters-inference

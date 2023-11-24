@@ -1,0 +1,16 @@
+# Build
+FROM rust:1.72.0 AS build
+
+COPY . /usr/src/newswaters-api/
+
+WORKDIR /usr/src/newswaters-api/
+
+RUN cargo build --release
+
+# Deployment
+FROM debian:trixie-slim
+
+RUN apt update -y && \
+    apt install -y libpq5
+
+COPY --from=build /usr/src/newswaters-api/target/release/newswaters-api /bin/newswaters-api
