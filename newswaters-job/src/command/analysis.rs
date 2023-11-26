@@ -108,6 +108,14 @@ pub(crate) async fn analyze_summaries(mut repo: Repository) -> Result<()> {
                 continue;
             }
         };
+        // TODO: Generate a genuinely irrelevant query
+        let irrelevance_query = match inference::instruct_random_query(&anchor_query).await {
+            Ok(query) => query,
+            Err(e) => {
+                println!("[ERR] inference.instruct_random_query (id={id}): err={e}");
+                continue;
+            }
+        };
         let subject_query = match inference::instruct_subject_query(&summary).await {
             Ok(query) => query,
             Err(e) => {
@@ -117,13 +125,15 @@ pub(crate) async fn analyze_summaries(mut repo: Repository) -> Result<()> {
         };
         println!(
             "[INFO] main.analyze_summaries (id={}): summary.len={}, \
-                anchor_query.len={}, entailment_query.len={}, contradiction_query.len={}, subject_query.len={}, \
+                anchor_query.len={}, entailment_query.len={}, contradiction_query.len={}, irrelevance_query.len={}, \
+                subject_query.len={}, \
                 elapsed_time={:?}",
             id,
             summary.len(),
             anchor_query.len(),
             entailment_query.len(),
             contradiction_query.len(),
+            irrelevance_query.len(),
             subject_query.len(),
             start_time.elapsed()
         );
@@ -131,6 +141,7 @@ pub(crate) async fn analyze_summaries(mut repo: Repository) -> Result<()> {
             anchor: vec![anchor_query],
             entailment: vec![entailment_query],
             contradiction: vec![contradiction_query],
+            irrelevance: vec![irrelevance_query],
             subject: subject_query.split("\n").map(str::to_string).collect(),
         })?;
         repo.update_analysis(id, summary_query)?;
@@ -143,5 +154,6 @@ struct SummaryQuery {
     anchor: Vec<String>,
     entailment: Vec<String>,
     contradiction: Vec<String>,
+    irrelevance: Vec<String>,
     subject: Vec<String>,
 }
