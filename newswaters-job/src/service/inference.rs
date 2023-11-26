@@ -1,6 +1,7 @@
 use std::{env, time::Duration};
 
 use anyhow::Result;
+use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
@@ -86,6 +87,33 @@ pub(crate) async fn instruct_contradiction_query(premise: &str) -> Result<String
         \"{}\"\n\
         ",
         premise
+    );
+    let hypothesis = instruct(instruction).await?;
+    return Ok(hypothesis);
+}
+
+pub(crate) async fn instruct_random_query(original: &str) -> Result<String> {
+    let mut words = original
+        .split(" ")
+        .map(|n| n.to_string().to_lowercase())
+        .collect::<Vec<String>>();
+    let sentence_len = words.len();
+    words.shuffle(&mut rand::thread_rng());
+    words.truncate(
+        (sentence_len as f32
+            * env::var("JOB_INSTRUCT_RANDOM_QUERY_WORDS_RETENTION_RATE")
+                .unwrap_or("0.2".to_string())
+                .parse::<f32>()?) as usize
+            + 1,
+    );
+    let instruction = format!(
+        "Generate a random sentence using the provided words. \
+        Ensure the sentence contains a minimum of {} words. \
+        Output the sentence without additional explanation.\n\n\
+        \"{}\"\n\
+        ",
+        sentence_len,
+        words.join(", ")
     );
     let hypothesis = instruct(instruction).await?;
     return Ok(hypothesis);
