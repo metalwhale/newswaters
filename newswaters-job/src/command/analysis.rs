@@ -9,8 +9,10 @@ use crate::{
     service::{hacker_news, inference, search_engine, Analysis},
 };
 
-pub(crate) async fn analyze_texts(mut repo: Repository) -> Result<()> {
-    let texts_num: usize = env::var("JOB_ANALYZE_TEXTS_NUM").unwrap_or("30".to_string()).parse()?;
+pub(crate) async fn analyze_story_texts(mut repo: Repository) -> Result<()> {
+    let texts_num: usize = env::var("JOB_ANALYZE_STORY_TEXTS_NUM")
+        .unwrap_or("30".to_string())
+        .parse()?;
     let top_story_ids = hacker_news::get_top_story_ids().await?;
     let mut analyses = repo.find_keyword_missing_analyses(&top_story_ids)?;
     // NOTE: We must use `truncate` function here instead of `LIMIT` in the query,
@@ -38,7 +40,7 @@ pub(crate) async fn analyze_texts(mut repo: Repository) -> Result<()> {
             }
         };
         println!(
-            "[INFO] main.analyze_texts (id={}): text.len={}, keyword.len={}, elapsed_time={:?}",
+            "[INFO] main.analyze_story_texts (id={}): text.len={}, keyword.len={}, elapsed_time={:?}",
             id,
             text.len(),
             keyword.len(),
@@ -48,25 +50,6 @@ pub(crate) async fn analyze_texts(mut repo: Repository) -> Result<()> {
             item_id: id,
             keyword: Some(keyword),
         })?;
-    }
-    Ok(())
-}
-
-pub(crate) async fn embed_keywords(mut repo: Repository) -> Result<()> {
-    let collection_name = env::var("SEARCH_ENGINE_VECTOR_KEYWORD_COLLECTION_NAME")?;
-    let keywords_num: usize = env::var("JOB_EMBED_KEYWORDS_NUM")
-        .unwrap_or("1000000".to_string())
-        .parse()?;
-    let chunk_size: usize = env::var("JOB_CHUNK_SIZE").unwrap_or("50".to_string()).parse()?;
-    let keyword_existing_ids = repo.find_keyword_existing_analyses(keywords_num)?;
-    let embedding_missing_ids = search_engine::find_missing(collection_name.clone(), keyword_existing_ids).await?;
-    for chunk in embedding_missing_ids.chunks(chunk_size) {
-        let analysis_keywords = repo.find_analysis_keywords(chunk)?;
-        for (id, keyword) in analysis_keywords {
-            let embedding = inference::embed(keyword).await?;
-            search_engine::upsert(collection_name.clone(), id, embedding).await?;
-            println!("[INFO] main.embed_keywords (id={})", id);
-        }
     }
     Ok(())
 }
@@ -87,10 +70,10 @@ pub(crate) async fn analyze_summaries(mut repo: Repository) -> Result<()> {
     }
     for (id, summary) in analyses {
         let start_time = std::time::Instant::now();
-        let anchor_query = match inference::instruct_anchor_query(&summary).await {
+        let anchor_query = match inference::instruct_summary_anchor_query(&summary).await {
             Ok(query) => query,
             Err(e) => {
-                println!("[ERR] inference.instruct_anchor_query (id={id}): err={e}");
+                println!("[ERR] inference.instruct_summary_anchor_query (id={id}): err={e}");
                 continue;
             }
         };
@@ -156,4 +139,23 @@ struct SummaryQuery {
     contradiction: Vec<String>,
     irrelevance: Vec<String>,
     subject: Vec<String>,
+}
+
+pub(crate) async fn embed_keywords(mut repo: Repository) -> Result<()> {
+    let collection_name = env::var("SEARCH_ENGINE_VECTOR_KEYWORD_COLLECTION_NAME")?;
+    let keywords_num: usize = env::var("JOB_EMBED_KEYWORDS_NUM")
+        .unwrap_or("1000000".to_string())
+        .parse()?;
+    let chunk_size: usize = env::var("JOB_CHUNK_SIZE").unwrap_or("50".to_string()).parse()?;
+    let keyword_existing_ids = repo.find_keyword_existing_analyses(keywords_num)?;
+    let embedding_missing_ids = search_engine::find_missing(collection_name.clone(), keyword_existing_ids).await?;
+    for chunk in embedding_missing_ids.chunks(chunk_size) {
+        let analysis_keywords = repo.find_analysis_keywords(chunk)?;
+        for (id, keyword) in analysis_keywords {
+            let embedding = inference::embed(keyword).await?;
+            search_engine::upsert(collection_name.clone(), id, embedding).await?;
+            println!("[INFO] main.embed_keywords (id={})", id);
+        }
+    }
+    Ok(())
 }

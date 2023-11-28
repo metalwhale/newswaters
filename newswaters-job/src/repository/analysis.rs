@@ -8,9 +8,9 @@ use super::Repository;
 use crate::{schema::analyses, service::Analysis};
 
 impl Repository {
-    ////////////////
-    // Analyze texts
-    ////////////////
+    //////////////////////
+    // Analyze story texts
+    //////////////////////
     pub(crate) fn find_keyword_missing_analyses(
         &mut self,
         ids: &[i32],
@@ -156,9 +156,9 @@ impl Repository {
     }
 }
 
-////////////////
-// Analyze texts
-////////////////
+//////////////////////
+// Analyze story texts
+//////////////////////
 #[derive(QueryableByName)]
 struct KeywordMissingAnalysisRecord {
     #[diesel(sql_type = Integer)]
