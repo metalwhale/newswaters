@@ -52,7 +52,7 @@ pub(crate) async fn instruct_keyword(title: &str, text: &str) -> Result<String> 
     return Ok(summary);
 }
 
-pub(crate) async fn instruct_anchor_query(content: &str) -> Result<String> {
+pub(crate) async fn instruct_summary_anchor_query(summary: &str) -> Result<String> {
     let instruction = format!(
         "\
         Please generate a sentence aligning with the provided content, omitting irrelevant text. \
@@ -61,8 +61,25 @@ pub(crate) async fn instruct_anchor_query(content: &str) -> Result<String> {
         Content:\n\
         {}\n\n\
         ",
-        env::var("JOB_INSTRUCT_ANCHOR_QUERY_MAX_WORDS_COUNT").unwrap_or("20".to_string()),
-        content
+        env::var("JOB_INSTRUCT_SUMMARY_ANCHOR_QUERY_MAX_WORDS_COUNT").unwrap_or("20".to_string()),
+        summary
+    );
+    let query = instruct(instruction).await?;
+    return Ok(query);
+}
+
+pub(crate) async fn instruct_comment_anchor_query(comment: &str) -> Result<String> {
+    let instruction = format!(
+        "\
+        Given the following content:\n\
+        ## Content:\n\
+        {}\n\n\
+        ## Instruct: \
+        Pretend you are the speaker. Express it more succinctly in {} words or fewer. \
+        Remove any irrelevant text.\n\
+        ",
+        comment,
+        env::var("JOB_INSTRUCT_COMMENT_ANCHOR_QUERY_MAX_WORDS_COUNT").unwrap_or("20".to_string())
     );
     let query = instruct(instruction).await?;
     return Ok(query);
@@ -102,7 +119,7 @@ pub(crate) async fn instruct_random_query(original: &str) -> Result<String> {
     words.truncate(
         (sentence_len as f32
             * env::var("JOB_INSTRUCT_RANDOM_QUERY_WORDS_RETENTION_RATE")
-                .unwrap_or("0.2".to_string())
+                .unwrap_or("0.1".to_string())
                 .parse::<f32>()?) as usize
             + 1,
     );

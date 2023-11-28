@@ -72,7 +72,8 @@ Whales feed by skimming.
     ```
     Analyze texts and embed keywords:
     ```bash
-    cargo run -- analyze_texts
+    cargo run -- analyze_story_texts
+    cargo run -- analyze_comment_texts
     cargo run -- embed_keywords
     ```
     Analyze summaries:

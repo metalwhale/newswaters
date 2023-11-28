@@ -8,9 +8,9 @@ use super::Repository;
 use crate::{schema::analyses, service::Analysis};
 
 impl Repository {
-    ////////////////
-    // Analyze texts
-    ////////////////
+    //////////////////////
+    // Analyze story texts
+    //////////////////////
     pub(crate) fn find_keyword_missing_analyses(
         &mut self,
         ids: &[i32],
@@ -89,18 +89,28 @@ impl Repository {
         return Ok(analysis_keywords);
     }
 
-    pub(crate) fn insert_analysis(&mut self, analysis: Analysis) -> Result<()> {
-        let analysis_record = InsertAnalysisRecord {
-            item_id: analysis.item_id,
-            keyword: analysis.keyword,
-            created_at: Local::now(),
-            updated_at: Local::now(),
-        };
-        diesel::insert_into(analyses::table)
-            .values(&analysis_record)
-            .returning(InsertAnalysisRecord::as_returning())
-            .get_result(&mut self.connection)?;
-        Ok(())
+    ////////////////////////
+    // Analyze comment texts
+    ////////////////////////
+    pub(crate) fn find_text_query_missing_analyses(
+        &mut self,
+        min_len: usize,
+        limit: usize,
+    ) -> Result<Vec<(i32, String)>> {
+        let text_query_missing_analyses = diesel::sql_query(format!(
+            "SELECT id, text \
+            FROM items \
+            LEFT JOIN analyses ON items.id = analyses.item_id \
+            WHERE type = 'comment' AND text IS NOT NULL AND length(text) >= {} \
+            AND text_query IS NULL \
+            ORDER BY id DESC LIMIT {}",
+            min_len, limit
+        ))
+        .get_results::<TextQueryMissingAnalysisRecord>(&mut self.connection)?
+        .into_iter()
+        .map(|r| (r.id, r.text))
+        .collect();
+        return Ok(text_query_missing_analyses);
     }
 
     ////////////////////
@@ -154,11 +164,29 @@ impl Repository {
             .execute(&mut self.connection)?;
         Ok(())
     }
+
+    /////////
+    // Common
+    /////////
+    pub(crate) fn insert_analysis(&mut self, analysis: Analysis) -> Result<()> {
+        let analysis_record = InsertAnalysisRecord {
+            item_id: analysis.item_id,
+            keyword: analysis.keyword,
+            text_query: analysis.text_query,
+            created_at: Local::now(),
+            updated_at: Local::now(),
+        };
+        diesel::insert_into(analyses::table)
+            .values(&analysis_record)
+            .returning(InsertAnalysisRecord::as_returning())
+            .get_result(&mut self.connection)?;
+        Ok(())
+    }
 }
 
-////////////////
-// Analyze texts
-////////////////
+//////////////////////
+// Analyze story texts
+//////////////////////
 #[derive(QueryableByName)]
 struct KeywordMissingAnalysisRecord {
     #[diesel(sql_type = Integer)]
@@ -185,14 +213,15 @@ struct AnalysisKeywordRecord {
     keyword: String,
 }
 
-#[derive(Queryable, Selectable, Insertable)]
-#[diesel(table_name = analyses)]
-#[diesel(check_for_backend(Pg))]
-struct InsertAnalysisRecord {
-    item_id: i32,
-    keyword: Option<String>,
-    created_at: DateTime<Local>,
-    updated_at: DateTime<Local>,
+////////////////////////
+// Analyze comment texts
+////////////////////////
+#[derive(QueryableByName)]
+struct TextQueryMissingAnalysisRecord {
+    #[diesel(sql_type = Integer)]
+    id: i32,
+    #[diesel(sql_type = Text)]
+    text: String,
 }
 
 ////////////////////
@@ -211,5 +240,19 @@ struct SummaryQueryMissingAnalysisRecord {
 #[diesel(check_for_backend(Pg))]
 struct UpdateAnalysisRecord {
     summary_query: Option<String>,
+    updated_at: DateTime<Local>,
+}
+
+/////////
+// Common
+/////////
+#[derive(Queryable, Selectable, Insertable)]
+#[diesel(table_name = analyses)]
+#[diesel(check_for_backend(Pg))]
+struct InsertAnalysisRecord {
+    item_id: i32,
+    keyword: Option<String>,
+    text_query: Option<String>,
+    created_at: DateTime<Local>,
     updated_at: DateTime<Local>,
 }

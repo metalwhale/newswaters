@@ -13,6 +13,7 @@ diesel::table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         summary_query -> Nullable<Text>,
+        text_query -> Nullable<Text>,
     }
 }
 
