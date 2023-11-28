@@ -23,6 +23,7 @@ async fn main() -> Result<()> {
             "embed_summaries" => command::item::embed_summaries(repo).await?,
             // Analysis
             "analyze_story_texts" => command::analysis::analyze_story_texts(repo).await?,
+            "analyze_comment_texts" => command::analysis::analyze_comment_texts(repo).await?,
             "analyze_summaries" => command::analysis::analyze_summaries(repo).await?,
             "embed_keywords" => command::analysis::embed_keywords(repo).await?,
             _ => {}

@@ -68,6 +68,23 @@ pub(crate) async fn instruct_summary_anchor_query(summary: &str) -> Result<Strin
     return Ok(query);
 }
 
+pub(crate) async fn instruct_comment_anchor_query(comment: &str) -> Result<String> {
+    let instruction = format!(
+        "\
+        Given the following content:\n\
+        ## Content:\n\
+        {}\n\n\
+        ## Instruct: \
+        Pretend you are the speaker. Express it more succinctly in {} words or fewer. \
+        Remove any irrelevant text.\n\
+        ",
+        comment,
+        env::var("JOB_INSTRUCT_COMMENT_ANCHOR_QUERY_MAX_WORDS_COUNT").unwrap_or("20".to_string())
+    );
+    let query = instruct(instruction).await?;
+    return Ok(query);
+}
+
 pub(crate) async fn instruct_entailment_query(premise: &str) -> Result<String> {
     let instruction = format!(
         "Refine the following sentence while keeping its meaning unchanged. \

@@ -49,6 +49,78 @@ pub(crate) async fn analyze_story_texts(mut repo: Repository) -> Result<()> {
         repo.insert_analysis(Analysis {
             item_id: id,
             keyword: Some(keyword),
+            text_query: None,
+        })?;
+    }
+    Ok(())
+}
+
+pub(crate) async fn analyze_comment_texts(mut repo: Repository) -> Result<()> {
+    let min_len: usize = env::var("JOB_ANALYZE_COMMENT_TEXT_MIN_LEN")
+        .unwrap_or("120".to_string())
+        .parse()?;
+    let max_len: usize = env::var("JOB_ANALYZE_COMMENT_TEXT_MAX_LEN")
+        .unwrap_or("4800".to_string())
+        .parse()?;
+    let texts_num: usize = env::var("JOB_ANALYZE_COMMENT_TEXTS_NUM")
+        .unwrap_or("30".to_string())
+        .parse()?;
+    let analyses = repo.find_text_query_missing_analyses(min_len, texts_num)?;
+    for (id, mut text) in analyses {
+        text.truncate(max_len);
+        let start_time = std::time::Instant::now();
+        let anchor_query = match inference::instruct_comment_anchor_query(&text).await {
+            Ok(query) => query,
+            Err(e) => {
+                println!("[ERR] inference.instruct_comment_anchor_query (id={id}): err={e}");
+                continue;
+            }
+        };
+        let entailment_query = match inference::instruct_entailment_query(&anchor_query).await {
+            Ok(query) => query,
+            Err(e) => {
+                println!("[ERR] inference.instruct_entailment_query (id={id}): err={e}");
+                continue;
+            }
+        };
+        let contradiction_query = match inference::instruct_contradiction_query(&anchor_query).await {
+            Ok(query) => query,
+            Err(e) => {
+                println!("[ERR] inference.instruct_contradiction_query (id={id}): err={e}");
+                continue;
+            }
+        };
+        // TODO: Generate a genuinely irrelevant query
+        let irrelevance_query = match inference::instruct_random_query(&contradiction_query).await {
+            Ok(query) => query,
+            Err(e) => {
+                println!("[ERR] inference.instruct_random_query (id={id}): err={e}");
+                continue;
+            }
+        };
+        println!(
+            "[INFO] main.analyze_comment_texts (id={}): text.len={}, \
+                anchor_query.len={}, entailment_query.len={}, contradiction_query.len={}, irrelevance_query.len={}, \
+                elapsed_time={:?}",
+            id,
+            text.len(),
+            anchor_query.len(),
+            entailment_query.len(),
+            contradiction_query.len(),
+            irrelevance_query.len(),
+            start_time.elapsed()
+        );
+        let text_query = serde_json::to_string(&Query {
+            anchor: vec![anchor_query],
+            entailment: vec![entailment_query],
+            contradiction: vec![contradiction_query],
+            irrelevance: vec![irrelevance_query],
+            subject: vec![],
+        })?;
+        repo.insert_analysis(Analysis {
+            item_id: id,
+            keyword: None,
+            text_query: Some(text_query),
         })?;
     }
     Ok(())
@@ -92,7 +164,7 @@ pub(crate) async fn analyze_summaries(mut repo: Repository) -> Result<()> {
             }
         };
         // TODO: Generate a genuinely irrelevant query
-        let irrelevance_query = match inference::instruct_random_query(&anchor_query).await {
+        let irrelevance_query = match inference::instruct_random_query(&contradiction_query).await {
             Ok(query) => query,
             Err(e) => {
                 println!("[ERR] inference.instruct_random_query (id={id}): err={e}");
@@ -120,7 +192,7 @@ pub(crate) async fn analyze_summaries(mut repo: Repository) -> Result<()> {
             subject_query.len(),
             start_time.elapsed()
         );
-        let summary_query = serde_json::to_string(&SummaryQuery {
+        let summary_query = serde_json::to_string(&Query {
             anchor: vec![anchor_query],
             entailment: vec![entailment_query],
             contradiction: vec![contradiction_query],
@@ -133,7 +205,7 @@ pub(crate) async fn analyze_summaries(mut repo: Repository) -> Result<()> {
 }
 
 #[derive(Serialize)]
-struct SummaryQuery {
+struct Query {
     anchor: Vec<String>,
     entailment: Vec<String>,
     contradiction: Vec<String>,
