@@ -76,7 +76,7 @@ def export_summaries(cursor: psycopg2.extensions.cursor, data_dir: str, chunk_si
 
 
 def export_queries(cursor: psycopg2.extensions.cursor, data_dir: str, chunk_size: int = 50):
-    cursor.execute("SELECT count(*) FROM analyses WHERE summary_query IS NOT NULL")
+    cursor.execute("SELECT count(*) FROM analyses WHERE summary_passage IS NOT NULL")
     total, *_ = cursor.fetchone()
     print(f"Total: {total}")
     chunk_index = 0
@@ -90,11 +90,11 @@ def export_queries(cursor: psycopg2.extensions.cursor, data_dir: str, chunk_size
             print(f"[INFO] chunk_index={chunk_index}")
             offset = chunk_index * chunk_size
             cursor.execute(
-                "SELECT id, title, summary, keyword, summary_query "
+                "SELECT id, title, summary, keyword, summary_passage "
                 "FROM items "
                 "LEFT JOIN item_urls ON items.id = item_urls.item_id "
                 "LEFT JOIN analyses ON items.id = analyses.item_id "
-                "WHERE summary_query IS NOT NULL "
+                "WHERE summary_passage IS NOT NULL "
                 "ORDER BY id DESC "
                 f"OFFSET {offset} LIMIT {chunk_size}"
             )
@@ -102,14 +102,14 @@ def export_queries(cursor: psycopg2.extensions.cursor, data_dir: str, chunk_size
             if len(results) == 0:
                 break
             for row in results:
-                item_id, title, summary, keyword, query = row
+                item_id, title, summary, keyword, passage = row
                 items_writer.writerow({"id": item_id, "title": title})
                 with open(os.path.join(queries_dir, f"summary_{item_id}.txt"), "w") as summary_file, \
                         open(os.path.join(queries_dir, f"keyword_{item_id}.txt"), "w") as keyword_file, \
-                        open(os.path.join(queries_dir, f"query_{item_id}.json"), "w") as query_file:
+                        open(os.path.join(queries_dir, f"passage_{item_id}.json"), "w") as passage_file:
                     summary_file.write(summary + "\n")
                     keyword_file.write(keyword + "\n")
-                    query_file.write(json.dumps(json.loads(query), indent=4))
+                    passage_file.write(json.dumps(json.loads(passage), indent=4))
             items_file.flush()
             chunk_index += 1
 
