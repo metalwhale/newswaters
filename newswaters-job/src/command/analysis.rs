@@ -91,7 +91,7 @@ pub(crate) async fn analyze_comment_texts(mut repo: Repository) -> Result<()> {
             }
         };
         // TODO: Generate a genuinely irrelevant passage
-        let irrelevance_passage = match inference::instruct_random_passage(&contradiction_passage).await {
+        let irrelevance_passage = match inference::instruct_random_passage(&anchor_passage).await {
             Ok(passage) => passage,
             Err(e) => {
                 println!("[ERR] inference.instruct_random_passage (id={id}): err={e}");
@@ -164,7 +164,7 @@ pub(crate) async fn analyze_summaries(mut repo: Repository) -> Result<()> {
             }
         };
         // TODO: Generate a genuinely irrelevant passage
-        let irrelevance_passage = match inference::instruct_random_passage(&contradiction_passage).await {
+        let irrelevance_passage = match inference::instruct_random_passage(&anchor_passage).await {
             Ok(passage) => passage,
             Err(e) => {
                 println!("[ERR] inference.instruct_random_passage (id={id}): err={e}");

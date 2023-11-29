@@ -61,7 +61,7 @@ pub(crate) async fn instruct_summary_anchor_passage(summary: &str) -> Result<Str
         Content:\n\
         {}\n\n\
         ",
-        env::var("JOB_INSTRUCT_SUMMARY_ANCHOR_PASSAGE_MAX_WORDS_COUNT").unwrap_or("20".to_string()),
+        env::var("JOB_INSTRUCT_SUMMARY_ANCHOR_PASSAGE_MAX_WORDS_COUNT").unwrap_or("40".to_string()),
         summary
     );
     let passage = instruct(instruction).await?;
@@ -79,7 +79,7 @@ pub(crate) async fn instruct_comment_anchor_passage(comment: &str) -> Result<Str
         Remove any irrelevant text.\n\
         ",
         comment,
-        env::var("JOB_INSTRUCT_COMMENT_ANCHOR_PASSAGE_MAX_WORDS_COUNT").unwrap_or("20".to_string())
+        env::var("JOB_INSTRUCT_COMMENT_ANCHOR_PASSAGE_MAX_WORDS_COUNT").unwrap_or("40".to_string())
     );
     let passage = instruct(instruction).await?;
     return Ok(passage);
