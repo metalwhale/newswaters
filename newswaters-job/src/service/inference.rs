@@ -52,7 +52,7 @@ pub(crate) async fn instruct_keyword(title: &str, text: &str) -> Result<String> 
     return Ok(summary);
 }
 
-pub(crate) async fn instruct_summary_anchor_query(summary: &str) -> Result<String> {
+pub(crate) async fn instruct_summary_anchor_passage(summary: &str) -> Result<String> {
     let instruction = format!(
         "\
         Please generate a sentence aligning with the provided content, omitting irrelevant text. \
@@ -61,14 +61,14 @@ pub(crate) async fn instruct_summary_anchor_query(summary: &str) -> Result<Strin
         Content:\n\
         {}\n\n\
         ",
-        env::var("JOB_INSTRUCT_SUMMARY_ANCHOR_QUERY_MAX_WORDS_COUNT").unwrap_or("20".to_string()),
+        env::var("JOB_INSTRUCT_SUMMARY_ANCHOR_PASSAGE_MAX_WORDS_COUNT").unwrap_or("20".to_string()),
         summary
     );
-    let query = instruct(instruction).await?;
-    return Ok(query);
+    let passage = instruct(instruction).await?;
+    return Ok(passage);
 }
 
-pub(crate) async fn instruct_comment_anchor_query(comment: &str) -> Result<String> {
+pub(crate) async fn instruct_comment_anchor_passage(comment: &str) -> Result<String> {
     let instruction = format!(
         "\
         Given the following content:\n\
@@ -79,13 +79,13 @@ pub(crate) async fn instruct_comment_anchor_query(comment: &str) -> Result<Strin
         Remove any irrelevant text.\n\
         ",
         comment,
-        env::var("JOB_INSTRUCT_COMMENT_ANCHOR_QUERY_MAX_WORDS_COUNT").unwrap_or("20".to_string())
+        env::var("JOB_INSTRUCT_COMMENT_ANCHOR_PASSAGE_MAX_WORDS_COUNT").unwrap_or("20".to_string())
     );
-    let query = instruct(instruction).await?;
-    return Ok(query);
+    let passage = instruct(instruction).await?;
+    return Ok(passage);
 }
 
-pub(crate) async fn instruct_entailment_query(premise: &str) -> Result<String> {
+pub(crate) async fn instruct_entailment_passage(premise: &str) -> Result<String> {
     let instruction = format!(
         "Refine the following sentence while keeping its meaning unchanged. \
         Output the sentence without additional explanation.\n\n\
@@ -97,7 +97,7 @@ pub(crate) async fn instruct_entailment_query(premise: &str) -> Result<String> {
     return Ok(hypothesis);
 }
 
-pub(crate) async fn instruct_contradiction_query(premise: &str) -> Result<String> {
+pub(crate) async fn instruct_contradiction_passage(premise: &str) -> Result<String> {
     let instruction = format!(
         "Make modifications to the following sentence, ensuring that its meaning becomes entirely contradictory. \
         Output the sentence without additional explanation.\n\n\
@@ -109,7 +109,7 @@ pub(crate) async fn instruct_contradiction_query(premise: &str) -> Result<String
     return Ok(hypothesis);
 }
 
-pub(crate) async fn instruct_random_query(original: &str) -> Result<String> {
+pub(crate) async fn instruct_random_passage(original: &str) -> Result<String> {
     let mut words = original
         .split(" ")
         .map(|n| n.to_string().to_lowercase())
@@ -118,7 +118,7 @@ pub(crate) async fn instruct_random_query(original: &str) -> Result<String> {
     words.shuffle(&mut rand::thread_rng());
     words.truncate(
         (sentence_len as f32
-            * env::var("JOB_INSTRUCT_RANDOM_QUERY_WORDS_RETENTION_RATE")
+            * env::var("JOB_INSTRUCT_RANDOM_PASSAGE_WORDS_RETENTION_RATE")
                 .unwrap_or("0.1".to_string())
                 .parse::<f32>()?) as usize
             + 1,
@@ -136,7 +136,7 @@ pub(crate) async fn instruct_random_query(original: &str) -> Result<String> {
     return Ok(hypothesis);
 }
 
-pub(crate) async fn instruct_subject_query(content: &str) -> Result<String> {
+pub(crate) async fn instruct_subject_passage(content: &str) -> Result<String> {
     let instruction = format!(
         "\
         Please generate {} different subjects aligning with the content. \
@@ -146,8 +146,8 @@ pub(crate) async fn instruct_subject_query(content: &str) -> Result<String> {
         Content:\n\
         {}\n\n\
         ",
-        env::var("JOB_INSTRUCT_SUBJECT_QUERY_MAX_SUBJECTS_NUM").unwrap_or("5".to_string()),
-        env::var("JOB_INSTRUCT_SUBJECT_QUERY_MAX_WORDS_COUNT").unwrap_or("5".to_string()),
+        env::var("JOB_INSTRUCT_SUBJECT_PASSAGE_MAX_SUBJECTS_NUM").unwrap_or("5".to_string()),
+        env::var("JOB_INSTRUCT_SUBJECT_PASSAGE_MAX_WORDS_COUNT").unwrap_or("5".to_string()),
         content
     );
     let subject = instruct(instruction).await?;

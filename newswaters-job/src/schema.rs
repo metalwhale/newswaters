@@ -12,8 +12,8 @@ diesel::table! {
         keyword -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
-        summary_query -> Nullable<Text>,
-        text_query -> Nullable<Text>,
+        text_passage -> Nullable<Text>,
+        summary_passage -> Nullable<Text>,
     }
 }
 

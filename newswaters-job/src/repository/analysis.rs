@@ -92,70 +92,70 @@ impl Repository {
     ////////////////////////
     // Analyze comment texts
     ////////////////////////
-    pub(crate) fn find_text_query_missing_analyses(
+    pub(crate) fn find_text_passage_missing_analyses(
         &mut self,
         min_len: usize,
         limit: usize,
     ) -> Result<Vec<(i32, String)>> {
-        let text_query_missing_analyses = diesel::sql_query(format!(
+        let text_passage_missing_analyses = diesel::sql_query(format!(
             "SELECT id, text \
             FROM items \
             LEFT JOIN analyses ON items.id = analyses.item_id \
             WHERE type = 'comment' AND text IS NOT NULL AND length(text) >= {} \
-            AND text_query IS NULL \
+            AND text_passage IS NULL \
             ORDER BY id DESC LIMIT {}",
             min_len, limit
         ))
-        .get_results::<TextQueryMissingAnalysisRecord>(&mut self.connection)?
+        .get_results::<TextPassageMissingAnalysisRecord>(&mut self.connection)?
         .into_iter()
         .map(|r| (r.id, r.text))
         .collect();
-        return Ok(text_query_missing_analyses);
+        return Ok(text_passage_missing_analyses);
     }
 
     ////////////////////
     // Analyze summaries
     ////////////////////
-    pub(crate) fn find_summary_query_missing_analyses(&mut self, ids: &[i32]) -> Result<Vec<(i32, String)>> {
-        let summary_query_missing_analyses = diesel::sql_query(format!(
+    pub(crate) fn find_summary_passage_missing_analyses(&mut self, ids: &[i32]) -> Result<Vec<(i32, String)>> {
+        let summary_passage_missing_analyses = diesel::sql_query(format!(
             "SELECT s.i AS id, summary \
             FROM unnest(ARRAY[{}]) AS s(i) \
             JOIN item_urls ON s.i = item_urls.item_id \
             JOIN analyses ON s.i = analyses.item_id \
-            WHERE summary IS NOT NULL AND summary_query IS NULL",
+            WHERE summary IS NOT NULL AND summary_passage IS NULL",
             ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", ")
         ))
-        .get_results::<SummaryQueryMissingAnalysisRecord>(&mut self.connection)?
+        .get_results::<SummaryPassageMissingAnalysisRecord>(&mut self.connection)?
         .into_iter()
         .map(|r| (r.id, r.summary))
         .collect();
-        return Ok(summary_query_missing_analyses);
+        return Ok(summary_passage_missing_analyses);
     }
 
-    pub(crate) fn find_summary_query_missing_analyses_excluding(
+    pub(crate) fn find_summary_passage_missing_analyses_excluding(
         &mut self,
         ids: &[i32],
         limit: usize,
     ) -> Result<Vec<(i32, String)>> {
-        let summary_query_missing_analyses = diesel::sql_query(format!(
+        let summary_passage_missing_analyses = diesel::sql_query(format!(
             "SELECT item_urls.item_id AS id, summary \
             FROM item_urls \
             JOIN analyses ON item_urls.item_id = analyses.item_id \
-            WHERE summary IS NOT NULL AND summary_query IS NULL AND item_urls.item_id NOT IN ({}) \
+            WHERE summary IS NOT NULL AND summary_passage IS NULL AND item_urls.item_id NOT IN ({}) \
             ORDER BY id DESC LIMIT {}",
             ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", "),
             limit
         ))
-        .get_results::<SummaryQueryMissingAnalysisRecord>(&mut self.connection)?
+        .get_results::<SummaryPassageMissingAnalysisRecord>(&mut self.connection)?
         .into_iter()
         .map(|r| (r.id, r.summary))
         .collect();
-        return Ok(summary_query_missing_analyses);
+        return Ok(summary_passage_missing_analyses);
     }
 
-    pub(crate) fn update_analysis(&mut self, item_id: i32, summary_query: String) -> Result<()> {
+    pub(crate) fn update_analysis(&mut self, item_id: i32, summary_passage: String) -> Result<()> {
         let update_analysis_record = UpdateAnalysisRecord {
-            summary_query: Some(summary_query),
+            summary_passage: Some(summary_passage),
             updated_at: Local::now(),
         };
         diesel::update(analyses::table)
@@ -172,7 +172,7 @@ impl Repository {
         let analysis_record = InsertAnalysisRecord {
             item_id: analysis.item_id,
             keyword: analysis.keyword,
-            text_query: analysis.text_query,
+            text_passage: analysis.text_passage,
             created_at: Local::now(),
             updated_at: Local::now(),
         };
@@ -217,7 +217,7 @@ struct AnalysisKeywordRecord {
 // Analyze comment texts
 ////////////////////////
 #[derive(QueryableByName)]
-struct TextQueryMissingAnalysisRecord {
+struct TextPassageMissingAnalysisRecord {
     #[diesel(sql_type = Integer)]
     id: i32,
     #[diesel(sql_type = Text)]
@@ -228,7 +228,7 @@ struct TextQueryMissingAnalysisRecord {
 // Analyze summaries
 ////////////////////
 #[derive(QueryableByName)]
-struct SummaryQueryMissingAnalysisRecord {
+struct SummaryPassageMissingAnalysisRecord {
     #[diesel(sql_type = Integer)]
     id: i32,
     #[diesel(sql_type = Text)]
@@ -239,7 +239,7 @@ struct SummaryQueryMissingAnalysisRecord {
 #[diesel(table_name = analyses)]
 #[diesel(check_for_backend(Pg))]
 struct UpdateAnalysisRecord {
-    summary_query: Option<String>,
+    summary_passage: Option<String>,
     updated_at: DateTime<Local>,
 }
 
@@ -252,7 +252,7 @@ struct UpdateAnalysisRecord {
 struct InsertAnalysisRecord {
     item_id: i32,
     keyword: Option<String>,
-    text_query: Option<String>,
+    text_passage: Option<String>,
     created_at: DateTime<Local>,
     updated_at: DateTime<Local>,
 }

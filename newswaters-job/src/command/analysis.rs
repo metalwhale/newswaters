@@ -49,7 +49,7 @@ pub(crate) async fn analyze_story_texts(mut repo: Repository) -> Result<()> {
         repo.insert_analysis(Analysis {
             item_id: id,
             keyword: Some(keyword),
-            text_query: None,
+            text_passage: None,
         })?;
     }
     Ok(())
@@ -65,62 +65,62 @@ pub(crate) async fn analyze_comment_texts(mut repo: Repository) -> Result<()> {
     let texts_num: usize = env::var("JOB_ANALYZE_COMMENT_TEXTS_NUM")
         .unwrap_or("30".to_string())
         .parse()?;
-    let analyses = repo.find_text_query_missing_analyses(min_len, texts_num)?;
+    let analyses = repo.find_text_passage_missing_analyses(min_len, texts_num)?;
     for (id, mut text) in analyses {
         text.truncate(max_len);
         let start_time = std::time::Instant::now();
-        let anchor_query = match inference::instruct_comment_anchor_query(&text).await {
-            Ok(query) => query,
+        let anchor_passage = match inference::instruct_comment_anchor_passage(&text).await {
+            Ok(passage) => passage,
             Err(e) => {
-                println!("[ERR] inference.instruct_comment_anchor_query (id={id}): err={e}");
+                println!("[ERR] inference.instruct_comment_anchor_passage (id={id}): err={e}");
                 continue;
             }
         };
-        let entailment_query = match inference::instruct_entailment_query(&anchor_query).await {
-            Ok(query) => query,
+        let entailment_passage = match inference::instruct_entailment_passage(&anchor_passage).await {
+            Ok(passage) => passage,
             Err(e) => {
-                println!("[ERR] inference.instruct_entailment_query (id={id}): err={e}");
+                println!("[ERR] inference.instruct_entailment_passage (id={id}): err={e}");
                 continue;
             }
         };
-        let contradiction_query = match inference::instruct_contradiction_query(&anchor_query).await {
-            Ok(query) => query,
+        let contradiction_passage = match inference::instruct_contradiction_passage(&anchor_passage).await {
+            Ok(passage) => passage,
             Err(e) => {
-                println!("[ERR] inference.instruct_contradiction_query (id={id}): err={e}");
+                println!("[ERR] inference.instruct_contradiction_passage (id={id}): err={e}");
                 continue;
             }
         };
-        // TODO: Generate a genuinely irrelevant query
-        let irrelevance_query = match inference::instruct_random_query(&contradiction_query).await {
-            Ok(query) => query,
+        // TODO: Generate a genuinely irrelevant passage
+        let irrelevance_passage = match inference::instruct_random_passage(&contradiction_passage).await {
+            Ok(passage) => passage,
             Err(e) => {
-                println!("[ERR] inference.instruct_random_query (id={id}): err={e}");
+                println!("[ERR] inference.instruct_random_passage (id={id}): err={e}");
                 continue;
             }
         };
         println!(
             "[INFO] main.analyze_comment_texts (id={}): text.len={}, \
-                anchor_query.len={}, entailment_query.len={}, contradiction_query.len={}, irrelevance_query.len={}, \
+                anchor_passage.len={}, entailment_passage.len={}, contradiction_passage.len={}, irrelevance_passage.len={}, \
                 elapsed_time={:?}",
             id,
             text.len(),
-            anchor_query.len(),
-            entailment_query.len(),
-            contradiction_query.len(),
-            irrelevance_query.len(),
+            anchor_passage.len(),
+            entailment_passage.len(),
+            contradiction_passage.len(),
+            irrelevance_passage.len(),
             start_time.elapsed()
         );
-        let text_query = serde_json::to_string(&Query {
-            anchor: vec![anchor_query],
-            entailment: vec![entailment_query],
-            contradiction: vec![contradiction_query],
-            irrelevance: vec![irrelevance_query],
+        let text_passage = serde_json::to_string(&Passage {
+            anchor: vec![anchor_passage],
+            entailment: vec![entailment_passage],
+            contradiction: vec![contradiction_passage],
+            irrelevance: vec![irrelevance_passage],
             subject: vec![],
         })?;
         repo.insert_analysis(Analysis {
             item_id: id,
             keyword: None,
-            text_query: Some(text_query),
+            text_passage: Some(text_passage),
         })?;
     }
     Ok(())
@@ -131,81 +131,81 @@ pub(crate) async fn analyze_summaries(mut repo: Repository) -> Result<()> {
         .unwrap_or("30".to_string())
         .parse()?;
     let top_story_ids = hacker_news::get_top_story_ids().await?;
-    let mut analyses = repo.find_summary_query_missing_analyses(&top_story_ids)?;
+    let mut analyses = repo.find_summary_passage_missing_analyses(&top_story_ids)?;
     // NOTE: We must use `truncate` function here instead of `LIMIT` in the query,
     //   as `LIMIT` doesn't maintain the order of top stories' ids.
     analyses.truncate(summaries_num);
     if env::var("JOB_ANALYZE_ADDITIONAL_SUMMARIES").is_ok() && analyses.len() < summaries_num {
         let mut additional_items =
-            repo.find_summary_query_missing_analyses_excluding(&top_story_ids, summaries_num - analyses.len())?;
+            repo.find_summary_passage_missing_analyses_excluding(&top_story_ids, summaries_num - analyses.len())?;
         analyses.append(&mut additional_items);
     }
     for (id, summary) in analyses {
         let start_time = std::time::Instant::now();
-        let anchor_query = match inference::instruct_summary_anchor_query(&summary).await {
-            Ok(query) => query,
+        let anchor_passage = match inference::instruct_summary_anchor_passage(&summary).await {
+            Ok(passage) => passage,
             Err(e) => {
-                println!("[ERR] inference.instruct_summary_anchor_query (id={id}): err={e}");
+                println!("[ERR] inference.instruct_summary_anchor_passage (id={id}): err={e}");
                 continue;
             }
         };
-        let entailment_query = match inference::instruct_entailment_query(&anchor_query).await {
-            Ok(query) => query,
+        let entailment_passage = match inference::instruct_entailment_passage(&anchor_passage).await {
+            Ok(passage) => passage,
             Err(e) => {
-                println!("[ERR] inference.instruct_entailment_query (id={id}): err={e}");
+                println!("[ERR] inference.instruct_entailment_passage (id={id}): err={e}");
                 continue;
             }
         };
-        let contradiction_query = match inference::instruct_contradiction_query(&anchor_query).await {
-            Ok(query) => query,
+        let contradiction_passage = match inference::instruct_contradiction_passage(&anchor_passage).await {
+            Ok(passage) => passage,
             Err(e) => {
-                println!("[ERR] inference.instruct_contradiction_query (id={id}): err={e}");
+                println!("[ERR] inference.instruct_contradiction_passage (id={id}): err={e}");
                 continue;
             }
         };
-        // TODO: Generate a genuinely irrelevant query
-        let irrelevance_query = match inference::instruct_random_query(&contradiction_query).await {
-            Ok(query) => query,
+        // TODO: Generate a genuinely irrelevant passage
+        let irrelevance_passage = match inference::instruct_random_passage(&contradiction_passage).await {
+            Ok(passage) => passage,
             Err(e) => {
-                println!("[ERR] inference.instruct_random_query (id={id}): err={e}");
+                println!("[ERR] inference.instruct_random_passage (id={id}): err={e}");
                 continue;
             }
         };
-        let subject_query = match inference::instruct_subject_query(&summary).await {
-            Ok(query) => query,
+        let subject_passage = match inference::instruct_subject_passage(&summary).await {
+            Ok(passage) => passage,
             Err(e) => {
-                println!("[ERR] inference.instruct_subject_query (id={id}): err={e}");
+                println!("[ERR] inference.instruct_subject_passage (id={id}): err={e}");
                 continue;
             }
         };
         println!(
             "[INFO] main.analyze_summaries (id={}): summary.len={}, \
-                anchor_query.len={}, entailment_query.len={}, contradiction_query.len={}, irrelevance_query.len={}, \
-                subject_query.len={}, \
+                anchor_passage.len={}, entailment_passage.len={}, contradiction_passage.len={}, irrelevance_passage.len={}, \
+                subject_passage.len={}, \
                 elapsed_time={:?}",
             id,
             summary.len(),
-            anchor_query.len(),
-            entailment_query.len(),
-            contradiction_query.len(),
-            irrelevance_query.len(),
-            subject_query.len(),
+            anchor_passage.len(),
+            entailment_passage.len(),
+            contradiction_passage.len(),
+            irrelevance_passage.len(),
+            subject_passage.len(),
             start_time.elapsed()
         );
-        let summary_query = serde_json::to_string(&Query {
-            anchor: vec![anchor_query],
-            entailment: vec![entailment_query],
-            contradiction: vec![contradiction_query],
-            irrelevance: vec![irrelevance_query],
-            subject: subject_query.split("\n").map(str::to_string).collect(),
+        let summary_passage = serde_json::to_string(&Passage {
+            anchor: vec![anchor_passage],
+            entailment: vec![entailment_passage],
+            contradiction: vec![contradiction_passage],
+            irrelevance: vec![irrelevance_passage],
+            subject: subject_passage.split("\n").map(str::to_string).collect(),
         })?;
-        repo.update_analysis(id, summary_query)?;
+        repo.update_analysis(id, summary_passage)?;
     }
     Ok(())
 }
 
 #[derive(Serialize)]
-struct Query {
+struct Passage {
     anchor: Vec<String>,
     entailment: Vec<String>,
     contradiction: Vec<String>,
