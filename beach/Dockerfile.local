@@ -1,4 +1,4 @@
-FROM python:3.12.0-bookworm
+FROM python:3.11.6-bookworm
 
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt && \
