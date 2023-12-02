@@ -60,25 +60,22 @@ Whales feed by skimming.
     ```bash
     DATABASE_URL=postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB} diesel migration run
     ```
-3. Collect items:
+3. Collecting:
     ```bash
-    cargo run -- collect_items
-    cargo run -- collect_item_urls
+    cargo run -- collect-items
+    cargo run -- collect-item-urls
     ```
-4. Summarize texts and embed summaries:
+4. Summarize and analyze:
     ```bash
-    cargo run -- summarize_texts
-    cargo run -- embed_summaries
+    cargo run -- summarize-texts
+    cargo run -- analyze-story-texts
+    cargo run -- analyze-comment-texts
+    cargo run -- analyze-summaries
     ```
-    Analyze texts and embed keywords:
+5. Run embedding:
     ```bash
-    cargo run -- analyze_story_texts
-    cargo run -- analyze_comment_texts
-    cargo run -- embed_keywords
-    ```
-    Analyze summaries:
-    ```bash
-    cargo run -- analyze_summaries
+    cargo run -- embed-summaries
+    cargo run -- embed-keywords
     ```
 
 ### Run the api
