@@ -50,6 +50,7 @@ pub(crate) async fn analyze_story_texts(mut repo: Repository) -> Result<()> {
             item_id: id,
             keyword: Some(keyword),
             text_passage: None,
+            summary_passage: None,
         })?;
     }
     Ok(())
@@ -121,6 +122,7 @@ pub(crate) async fn analyze_comment_texts(mut repo: Repository) -> Result<()> {
             item_id: id,
             keyword: None,
             text_passage: Some(text_passage),
+            summary_passage: None,
         })?;
     }
     Ok(())
@@ -199,7 +201,12 @@ pub(crate) async fn analyze_summaries(mut repo: Repository) -> Result<()> {
             irrelevance: vec![irrelevance_passage],
             subject: subject_passage.split("\n").map(str::to_string).collect(),
         })?;
-        repo.update_analysis(id, summary_passage)?;
+        repo.insert_analysis(Analysis {
+            item_id: id,
+            keyword: None,
+            text_passage: None,
+            summary_passage: Some(summary_passage),
+        })?;
     }
     Ok(())
 }
