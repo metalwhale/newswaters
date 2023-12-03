@@ -121,7 +121,7 @@ impl Repository {
             "SELECT s.i AS id, summary \
             FROM unnest(ARRAY[{}]) AS s(i) \
             JOIN item_urls ON s.i = item_urls.item_id \
-            JOIN analyses ON s.i = analyses.item_id \
+            LEFT JOIN analyses ON s.i = analyses.item_id \
             WHERE summary IS NOT NULL AND summary_passage IS NULL",
             ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", ")
         ))
@@ -140,7 +140,7 @@ impl Repository {
         let summary_passage_missing_analyses = diesel::sql_query(format!(
             "SELECT item_urls.item_id AS id, summary \
             FROM item_urls \
-            JOIN analyses ON item_urls.item_id = analyses.item_id \
+            LEFT JOIN analyses ON item_urls.item_id = analyses.item_id \
             WHERE summary IS NOT NULL AND summary_passage IS NULL AND item_urls.item_id NOT IN ({}) \
             ORDER BY id DESC LIMIT {}",
             ids.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(", "),
@@ -153,18 +153,6 @@ impl Repository {
         return Ok(summary_passage_missing_analyses);
     }
 
-    pub(crate) fn update_analysis(&mut self, item_id: i32, summary_passage: String) -> Result<()> {
-        let update_analysis_record = UpdateAnalysisRecord {
-            summary_passage: Some(summary_passage),
-            updated_at: Local::now(),
-        };
-        diesel::update(analyses::table)
-            .filter(analyses::item_id.eq(item_id))
-            .set(update_analysis_record)
-            .execute(&mut self.connection)?;
-        Ok(())
-    }
-
     /////////
     // Common
     /////////
@@ -173,6 +161,7 @@ impl Repository {
             item_id: analysis.item_id,
             keyword: analysis.keyword,
             text_passage: analysis.text_passage,
+            summary_passage: analysis.summary_passage,
             created_at: Local::now(),
             updated_at: Local::now(),
         };
@@ -253,6 +242,7 @@ struct InsertAnalysisRecord {
     item_id: i32,
     keyword: Option<String>,
     text_passage: Option<String>,
+    summary_passage: Option<String>,
     created_at: DateTime<Local>,
     updated_at: DateTime<Local>,
 }

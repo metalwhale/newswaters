@@ -37,4 +37,5 @@ pub(crate) struct Analysis {
     pub item_id: i32,
     pub keyword: Option<String>,
     pub text_passage: Option<String>,
+    pub summary_passage: Option<String>,
 }
