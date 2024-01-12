@@ -5,10 +5,14 @@ from pathlib import Path
 import psycopg2
 
 
-def export_passages(cursor: psycopg2.extensions.cursor, data_dir: str, chunk_size: int = 50):
-    cursor.execute("SELECT count(*) FROM analyses WHERE text_passage IS NOT NULL OR summary_passage IS NOT NULL")
+def export_passages(cursor: psycopg2.extensions.cursor, data_dir: str, chunk_size: int = 100, limit: int = 50000):
+    cursor.execute(
+        "SELECT count(*) "
+        "FROM analyses "
+        "WHERE text_passage IS NOT NULL OR summary_passage IS NOT NULL"
+    )
     total, *_ = cursor.fetchone()
-    print(f"Total: {total}")
+    print(f"[INFO] total={total}, limit={limit}")
     chunk_index = 0
     os.makedirs(data_dir, exist_ok=True)
     while True:
@@ -24,7 +28,7 @@ def export_passages(cursor: psycopg2.extensions.cursor, data_dir: str, chunk_siz
             f"OFFSET {offset} LIMIT {chunk_size}"
         )
         results = cursor.fetchall()
-        if len(results) == 0:
+        if len(results) == 0 or offset >= limit:
             break
         for row in results:
             item_id, text, summary, text_passage, summary_passage = row
