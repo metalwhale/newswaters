@@ -20,4 +20,4 @@ jobs:
           context: "{{defaultContext}}:newswaters-inference"
           file: Dockerfile.deployment
           push: true
-          tags: metalwhaledev/newswaters-inference:0.1.0
+          tags: metalwhaledev/newswaters-inference:0.1.1

@@ -13,7 +13,7 @@ use candle_transformers::models::jina_bert::{BertModel, Config};
 use hf_hub::{api::sync::Api, Repo, RepoType};
 use tokenizers::Tokenizer;
 
-const MODEL_NAME: &str = "jinaai/jina-embeddings-v2-base-en";
+const MODEL_NAME: &str = "metalwhale/jina-embeddings-v2-base-en-ft";
 const TOKENIZER_NAME: &str = "sentence-transformers/all-MiniLM-L6-v2";
 
 #[derive(Clone)]
